@@ -1,0 +1,61 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 01:44 (KST)
+
+[사용 코드]
+code/feature_quality.py
+
+[이전 실험 흐름]
+  04140103_initial_pca_result  → PCA PC1 Score HI (비단조 문제)
+  04140132_spe_hi              → 선형 PCA SPE HI (FPT 임계값 붕괴)
+  04140135_kpca_hi             → KPCA SPE/MD HI (동일 문제 지속)
+  04140144_feature_quality_analysis ← 현재 (근본 원인 분석)
+
+[실험 목적]
+  세 가지 HI 구성 실험에서 공통적으로 나타난 문제의 근본 원인 진단.
+  76개 특징 각각의 열화 추적 능력을 단조성/추세성 지표로 정량 평가하여
+  HI 구성에 실제로 기여하는 유효 특징만 선별.
+
+[평가 지표]
+  1. Monotonicity (단조성):
+     Mon(f) = (1/(N-1)) * |#{Δf > 0} - #{Δf < 0}|
+     - Δf = f[i+1] - f[i] (연속 1차 차분)
+     - 증가/감소를 반복 없이 일관되게 하면 1.0에 가까워짐
+     - 열화가 진행될수록 단방향으로 변해야 좋은 특징
+
+  2. Trendability (추세성):
+     Tre(f) = |Spearman's ρ(f, t)|
+     - Spearman 순위 상관계수(비모수적) 사용: 비선형 단조 관계도 포착
+     - |ρ|: 방향 무관 추세 강도 → 0(무관계) ~ 1(완전 단조)
+     - Pearson(선형 상관) 대신 Spearman 사용 이유:
+       열화 추세가 선형이 아닐 수 있고, 이상치에 강건함
+
+  3. Quality = (Mon + Tre) / 2  (최종 순위 결정 지표)
+
+  각 베어링(B1~B4)별로 계산 후 평균을 최종 지표로 사용
+
+[정규화 처리]
+  - 단조성/추세성 계산: raw(비정규화) 특징값 사용 (상대 순위/트렌드 측정)
+  - 시각화(시계열): MinMaxScaler([0,1]) 정규화 (시각적 비교 목적)
+  - 주의: StandardScaler는 HI 구성 파이프라인 내부에서만 사용
+
+[선별 기준]
+  Mon_mean ≥ 0.3 OR Tre_mean ≥ 0.3 (두 기준 중 하나 이상 만족)
+
+[생성 파일]
+  output/feature_quality_all.csv           : 76개 특징 전체 품질 지표
+  output/selected_features.txt             : 선별된 특징 목록
+  output/feature_quality_bubble.png        : Mon vs Tre 버블 차트
+  output/feature_quality_top20_bar.png     : 상위 20개 막대 그래프
+  output/feature_quality_heatmap.png       : 상위 30개 × 4베어링 히트맵
+  output/Bearing{1~4}_top_features_timeseries.png : 선별 특징 시계열
+
+[확인된 문제점]
+  → 실험 실행 후 결과를 보고 업데이트 예정
+
+[다음 단계]
+  → 선별된 특징으로 PCA/KPCA HI 재구성 실험 진행
+================================================================================

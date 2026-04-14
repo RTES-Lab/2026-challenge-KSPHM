@@ -1,0 +1,51 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 01:03 (KST)
+
+[사용 코드]
+User/SC/hi_pca_baseline.py
+
+[실험 목적]
+PCA(주성분 분석)를 이용한 베어링 열화 지표(Health Index, HI)의 Baseline 구성.
+특징 추출 → PCA 학습(정상 구간 기준) → PC1 Score를 HI로 사용하는 기초 파이프라인 검증.
+
+[실험 개요]
+- 대상 데이터: Train1~Train4 (각 베어링의 TDMS 진동 파일 전체)
+- 특징 추출: 채널별(CH1~CH4) 시간/주파수 도메인 특징 추출
+    시간 도메인 (11개/채널): RMS, Peak, P2P, Std, Skewness, Kurtosis,
+                              Crest Factor, Shape Factor, Impulse Factor,
+                              Energy(log1p), KurtRMS(log1p)
+    주파수 도메인 (8개/채널): Total Power, Low/Mid/High/B.High Band Energy Ratio,
+                              Mean Frequency, Freq Std, Spectral Entropy
+    총 특징 수: 19개 × 4채널 = 76개
+- HI 구성 방식: PCA PC1 Score
+    - 초기 15% 구간(정상 구간)으로 StandardScaler + PCA 학습
+    - 전체 데이터에 PC1 투영 → PC1 score를 HI로 사용
+    - [0, 1] min-max 정규화 (정상 구간 평균 = 0 기준)
+- 환경: conda 가상환경 ksphm_env / Python
+
+[생성 파일]
+- Bearing{1~4}_features.csv : 76개 특징 시계열 (캐시 파일)
+- Bearing{1~4}_HI.csv       : time_sec, HI, pc1_raw 컬럼
+- Bearing{1~4}_HI_detail.png: HI + RMS + Kurtosis 채널별 상세 플롯
+- All_HI_comparison.png     : 4개 베어링 HI 비교 플롯
+- HI_summary.csv            : 베어링별 요약 통계
+
+[주요 결과]
+- Bearing 1: N=126, 20.8hr, HI_final=0.014  / PC1 EVR=59.5%, 누적 87.0%
+- Bearing 2: N=114, 18.8hr, HI_final=0.501  / PC1 EVR=61.8%, 누적 89.8%
+- Bearing 3: N=89,  14.7hr, HI_final=0.043  / PC1 EVR=50.0%, 누적 79.7%
+- Bearing 4: N=137, 22.7hr, HI_final=0.000  / PC1 EVR=59.2%, 누적 92.7%
+
+[확인된 문제점]
+- HI가 말기에 0으로 수렴하는 비단조(non-monotonic) 거동 확인
+- PC1 방향이 열화 방향과 불일치: 임펄스→광대역 전환 시 PC1 score 감소
+- 선형 PCA로는 가변속(700~950 RPM) 조건의 비선형 열화 패턴 포착 한계
+
+[다음 단계]
+- HI 구성 방식 개선 (SPE, KPCA, LLE 등 검토)
+- FPT 임계값 설정 연구
+================================================================================

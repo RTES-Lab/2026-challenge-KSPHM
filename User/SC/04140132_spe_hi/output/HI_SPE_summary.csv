@@ -1,0 +1,5 @@
+Bearing,N_segments,Duration_hr,FPT_hr,HI_SPE_final,HI_cm_final,FPT_threshold,n_components
+1,126,20.83,3.0,0.0,1.0,0.0,10
+2,114,18.83,2.833,0.215,1.0,0.0,10
+3,89,14.67,2.167,0.0001,1.0,0.0,10
+4,137,22.67,3.333,0.0,1.0,0.0,10
