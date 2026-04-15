@@ -1,0 +1,40 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 23:59 (KST)
+
+[참고 논문]
+Li et al. (2019), RESS 186, 88-100. (대안 3 - Direct y_k measurement)
+
+[사용 코드]
+code/direct_nfe_ssm.py
+
+[실험 흐름]
+  이전: RPM 기반 단순 Signal Transform -> PCA-SPE -> SSM
+  현재: 물리 기반 결함 에너지 (FTF NFE) -> 바로 SSM 주입
+
+[실험 목표]
+  - 이전에 추출한 '케이지 결함 포락선 정규화 에너지(FTF NFE)'가 가장 강력한 고장 지표(HI)임을 확인.
+  - 이 특징을 다른 보정 작업(PCA) 없이 직접 Two-Factor SSM 파이프라인의 관측치 y_k로 주입.
+  - NFE 지표 단독으로 RPM 효과에 얼마나 강건하며, SSM의 칼만 필터가 얼마나 효과적으로 상태를 추적하는지 확인.
+  - 본 실험이 성공할 경우 매우 직관적이고 설명 가능한 완전한 RUL 파이프라인이 완성됨.
+
+[실험 설정]
+  - 입력 특징: Bearing{bid}_fault_freq_features.csv 내 '_FTF_nfe' 특징의 채널 평균값
+  - 스케일링: SSM의 수치 안정성을 위해 전체 Train 데이터를 기준으로 MinMaxScaler[0, 1] 처리
+  - SSM (Kalman Filter):
+      - x_k = x_{k-1} + mu[c] * dt + w
+      - y_k = x_k + gamma[c] + v
+  - 임계값: 정상 운전 구간(앞부분 15%) 기준 동적 임계값 (mean + 4*std). 단, 최소 0.3 보장
+  - RUL 평가: Monte Carlo 2000 Particles 기반 4-fold Leave-One-Out CV
+
+[저장 결과물]
+  output/Bearing{1~4}_direct_nfe_ssm.png
+  output/All_direct_NFE_SSM.png
+  output/Direct_NFE_SSM_summary.csv
+
+[확인된 문제점]
+  → 실험 완료 후 모니터링 예정
+================================================================================

@@ -1,0 +1,104 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 22:59 (KST)
+
+[참고 논문]
+Li et al. (2019), "Remaining useful life prediction of machinery under
+time-varying operating conditions based on a two-factor state-space model",
+Reliability Engineering and System Safety, 186, 88-100.
+
+[사용 코드]
+code/signal_transform.py
+
+[이전 실험 흐름]
+  04140103 → PCA PC1 HI (비단조 문제: RPM 변동에 의한 계단 패턴)
+  04140144 → 특징 품질 분석 (단조성/추세성 분석, RPM 계단 패턴 확인)
+  04142243 → Two-Factor SSM 1차 시도 (HI 비단조로 Kalman filter 실패)
+  04142259 ← 현재: Signal Jump 제거 전처리
+
+[실험 목적]
+  F2S2 논문의 Section 3 "Signal Transformation"만 분리하여 적용.
+  RPM 변화에 의한 특징의 Signal Jump를 제거함으로써:
+    1. 특징의 단조성(Monotonicity) 개선
+    2. 특징의 추세성(Trendability) 개선
+    3. 이후 HI→SSM 파이프라인에 깨끗한 입력 제공
+
+[핵심 알고리즘: Signal Transformation]
+  원본 신호 y_k^p (조건 p에서 관측) → 변환된 신호 y_k^B (baseline 조건으로):
+    y_k^B = a'_p × y_k^p + b'_p
+
+  a'_p, b'_p 추정:
+    1. Baseline 조건 = 가장 빈번한 RPM 구간
+    2. 조건 p 활성 시간에서 baseline 신호를 선형 보간
+    3. Least Squares: min Σ(y_interp - a'_p * y_p - b'_p)²
+    4. baseline 조건은 항등 변환 (a'=1, b'=0)
+
+[실험 설정]
+  - 입력: 04140103의 특징 캐시 (76개 raw 특징)
+  - RPM: Operation CSV → 진동 파일별 평균 RPM
+  - 이산화: 3구간 (분위수 기반)
+  - 베어링별로 독립 변환 파라미터 추정
+
+[생성 파일]
+  output/quality_comparison.csv                  : 76개 특징 Before/After 비교
+  output/Bearing{1~4}_features_transformed.csv   : 변환된 특징 캐시
+  output/Bearing{1,2}_before_after.png           : 상위 특징 시계열 비교
+  output/quality_scatter.png                     : Q_before vs Q_after 산점도
+
+[확인된 문제점]
+  → 실험 실행 후 업데이트 예정
+
+[다음 단계]
+  → 변환된 특징으로 HI 재구성 및 SSM 재적용
+================================================================================
+
+[실험 결과 요약]
+  RPM 구간: [669, 740, 967, 990] → 3구간 (분위수 균등)
+  Baseline 조건: 2 (고속 RPM, 빈도 최다: 156회)
+
+  평균 Quality: 0.2446 → 0.2588  (Δ=+0.0142, +5.8%)
+  개선된 특징: 49/76 (64%)
+  악화된 특징: 27/76 (36%)
+
+  주요 개선 특징 (ΔQ 기준):
+    ch2_rms       +0.0978
+    ch2_std       +0.0880
+    ch2_total_power +0.0862
+    ch4_low_band  +0.0825
+    ch4_impulse_f +0.0813
+    ch1_mid_band  +0.0767
+    ch4_crest_f   +0.0768
+    ch3_skewness  +0.0654
+    ch3_mid_band  +0.0620
+
+  주요 악화 특징:
+    ch3_kurt_rms  -0.0831
+    ch2_skewness  -0.0592
+    ch2_kurt_rms  -0.0571
+
+[확인된 문제점]
+  1. 전체 개선폭이 제한적 (+5.8%)
+     - 3구간 이산화가 너무 거칠 수 있음 (실제 RPM은 연속적)
+     - 현재 분위수 경계 [669, 740, 967, 990]: 중간 구간이 너무 넓음(740~967)
+     - RPM 변동의 실제 패턴(1시간 단위 계단)에 맞는 이산화 필요
+
+  2. 일부 특징 악화
+     - kurt_rms, skewness 등 통계적 고차 모멘트 특징은
+       비선형 신호 특성상 선형 변환(a'y+b')이 부적합
+     - 이런 특징은 별도 처리(로그 변환 후 선형 보정 등) 필요
+
+  3. Baseline 조건 선택 논의
+     - 고속 RPM이 baseline으로 선택됨
+     - 논문 원문: "가장 오래 작동한 조건"을 baseline으로 권장
+     - RPM이 균등 분포이면 어느 걸 선택해도 유사
+
+  4. 보간의 한계
+     - baseline 구간이 sparse한 시간대에서 보간 정확도 저하
+     - 특히 수명 초기/말기에 baseline 데이터가 적으면 변환 파라미터 왜곡
+
+[다음 단계]
+  → 변환된 특징 중 상위 20~25개로 HI 재구성
+  → 개선된 HI로 Two-Factor SSM 파이프라인 재적용

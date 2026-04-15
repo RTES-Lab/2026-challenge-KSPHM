@@ -1,0 +1,63 @@
+================================================================================
+실험 설명
+================================================================================
+
+[생성 일시] 2026-04-14 23:31 (KST)
+
+[참고 논문]
+Li et al. (2019), RESS 186, 88-100. (F2S2 - Two-Factor State-Space Model)
+
+[사용 코드]
+code/fault_freq_extraction.py
+
+[실험 목적]
+  진동 신호에서 베어링 고장 주파수(BPFI/BPFO/BSF/FTF) 에너지를 직접 추출하여:
+    1. 각 Train 베어링(1~4)의 결함 유형 추정 (내륜/외륜/전동체 우세 파악)
+    2. RPM 정규화 NFE 특징으로 Signal Jump 물리적 해소
+    3. F2S2 SSM의 직접 관측값(y_k)으로 사용 (이전 PCA-SPE HI 대체)
+
+[베어링 공식 스펙]
+  모델: 30306
+  고장 주파수 @ 1000 RPM:
+    BPFI = 140 Hz  (내륜)
+    BPFO = 93 Hz   (외륜)
+    BSF  = 78 Hz   (전동체)
+    FTF  = 6.7 Hz  (케이지)
+  임의 RPM: f = f_1000 × (RPM / 1000)
+
+[알고리즘: Envelope Analysis]
+  1. 고역통과 필터 (Butterworth, 500 Hz, 4차) → 저주파 진동 제거
+  2. Hilbert 변환 → 포락선(envelope) = |analytic signal|
+  3. DC 제거 → FFT → 포락선 스펙트럼
+  4. 결함 주파수 fc ± 10% 대역 + 2x, 3x 고조파 에너지 합산
+  5. NFE = E_fault / E_total_envelope (전체 포락선 에너지로 정규화)
+
+[NFE의 Signal Jump 해결 원리]
+  - RPM 상승 시 E_fault와 E_total 모두 상승 → 비율이 안정
+  - 결함에 기인한 상대적 성분만 강조됨
+  - 논문의 Signal Transformation을 물리적으로 내재화
+
+[추출 특징 목록]
+  채널별(CH1~CH4) × 결함 주파수(BPFI/BPFO/BSF/FTF) × 형태(raw/NFE)
+  + ch{N}_rms, ch{N}_kurtosis
+  총 특징 수: 4채널 × (4주파수 × 2형태 + 2기타) = 40개
+
+[생성 파일]
+  output/Bearing{1~4}_fault_freq_features.csv : 파일별 추출 특징
+  output/fault_feature_quality.csv            : 품질 지표 (Mon, Tre)
+  output/fault_nfe_evolution.png              : NFE 시계열 (4베어링)
+  output/spectra_early_vs_late.png            : 초기 vs 말기 스펙트럼 비교
+
+[실험 결과 요약: 결함 유형 추정]
+  - 모든 베어링(1~4)에서 **FTF(케이지 결함 주파수)** 대역의 NFE(Normalized Fault Energy)가 가장 높은 성장률(growth ratio)과 가장 안정적인 추세성(Trendability)을 보였습니다.
+    - Bearing 1: FTF (2.07x 성장, Tre=0.55)
+    - Bearing 2: FTF (4.75x 성장, Tre=0.71)
+    - Bearing 3: FTF (3.26x 성장, Tre=0.40)
+    - Bearing 4: FTF (3.22x 성장, Tre=0.70)
+  - 이 결과는 모든 베어링에 공통적으로 **케이지(Cage) 관련 결함** 트렌드가 가장 뚜렷하게 발현되고 있거나, FTF가 다른 결함(내/외륜)을 강하게 변조(modulation)하고 있음을 시사합니다.
+  - 이전에 우수한 것으로 선별된 통계적 특징(RMS, High Band 에너지 등)보다, NFE 기반의 FTF 특징이 물리적으로 본질에 가장 가까운 상태 지표(HI)가 될 수 있습니다.
+
+[다음 단계 (대안 3 실행)]
+  - 발견된 최적 특징인 `*_FTF_nfe` (또는 채널별 평균 NFE)를 PCA-SPE 보정 없이 **직접 SSM의 관측값(y_k)으로 사용하여** RUL 예측을 진행합니다.
+  - 논문(Li et al.)의 방식대로, y_k 파라미터를 Kalman/Particle Filter 단계에서 সরাসরি 다루어(Measurement function) 모델의 강건성을 확인할 계획입니다.
+================================================================================

@@ -1,0 +1,97 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 23:04 (KST)
+
+[참고 논문]
+Li et al. (2019), RESS 186, 88-100.
+
+[사용 코드]
+code/signal_transform_v2.py
+
+[이전 실험 흐름]
+  04140103 → 특징 추출 (76개)
+  04140144 → 특징 품질 분석 (RPM 계단 패턴 확인)
+  04142259 → Signal Transform v1 (3구간, +5.8% 개선)
+  04142304 ← 현재: Signal Transform v2 (2구간) + HI + SSM
+
+[v1 → v2 개선점]
+  1. RPM 이산화: 3구간(분위수) → 2구간(실제 패턴 기반)
+     - Train1~4 모두 저속(700~780) ↔ 고속(930~990) 2레벨 교번
+     - 경계: 850 RPM (실제 bimodal gap)
+     - v1의 중간 구간(740~967)이 양 레벨을 모두 포함하던 문제 해결
+  2. Baseline: 저속(조건 0) — 논문 권장: "가장 오래 작동한 조건"
+  3. End-to-end: 변환 → 상위 20개 선별 → HI(SPE) → SSM(Kalman+MC)
+
+[실험 설정]
+  RPM 경계: 850 RPM
+  조건 수: 2 (0=저속, 1=고속)
+  Baseline: 0 (저속)
+  HI: 변환 후 상위 20개 특징 → PCA 5성분 → SPE
+  SSM: Leave-One-Out 4-fold
+  MC 입자: 2000
+
+[생성 파일]
+  output/Bearing{1~4}_features_transformed.csv
+  output/quality_comparison_v2.csv
+  output/Bearing{1~4}_SSM_result.csv
+  output/Bearing{1~4}_SSM_v2.png
+  output/All_SSM_v2_comparison.png
+  output/Bearing1_feature_comparison_v2.png
+  output/SSM_summary_v2.csv
+
+[확인된 문제점]
+  → 실험 실행 후 업데이트 예정
+
+[다음 단계]
+  → 결과 분석 → 필요시 특징 조합 최적화 또는 Particle Filter 도입
+================================================================================
+
+[실험 결과 요약]
+
+== Signal Transformation v2 (2구간 이산화) ==
+  RPM 분포: 저속(<850)=240회, 고속(≥850)=226회
+  평균 Quality: 0.2446 → 0.2474 (Δ=+0.0028)
+  개선: 45/76, 악화: 31/76
+
+== HI 품질 (변환 후 상위 20개 → SPE) — 극적 개선! ==
+  Bearing 1: Mon=0.080, Tre=0.935  ← Trendability 매우 높음
+  Bearing 2: Mon=0.150, Tre=0.865
+  Bearing 3: Mon=0.148, Tre=0.831
+  Bearing 4: Mon=0.125, Tre=0.898
+  ※ 이전 PCA SPE의 Trendability는 0.3~0.5 수준이었음 → > 0.83로 대폭 개선
+
+== SSM (Kalman Filter + MC RUL) ==
+  Bearing 1: FPT=20.83hr (마지막 직전), RUL=0.167hr
+  Bearing 2: FPT=18.50hr (말기 구간),   RUL=0.167hr
+  Bearing 3: FPT=13.67hr (전체의 93%),   RUL=0.378hr
+  Bearing 4: FPT=16.67hr (전체의 74%),   RUL=5.872hr
+
+  ※ sigma_w/sigma_v 비율이 크게 개선됨 (v1: sigma_w≈0, v2: 0.04~0.08)
+    → Kalman filter가 관측값을 신뢰하기 시작 → 상태 추적 가능
+
+[확인된 문제점]
+  1. FPT가 여전히 말기에 집중
+     - HI의 단조성(Mon)이 0.08~0.15로 아직 낮음
+     - HI가 대부분 구간에서 0 근처 → 말기에 급상승하는 형태 지속
+     - Trendability는 높지만 (Spearman 상관은 높음) 증가분이 편향되어 있음
+
+  2. 특징(Feature) 수준에서 개선이 미미 (+0.3%)
+     - 2구간 이산화에도 특징 자체의 품질 지표 개선이 적음
+     - 원인: 개별 특징의 Signal Jump가 단순 선형(a'y+b')으로 설명 안됨
+     - 특히 에너지 계열 특징은 RPM의 제곱에 의존 → 비선형 변환 필요 가능성
+     - 그러나 HI(SPE) 레벨로 가면 Trendability가 0.83~0.94로 대폭 향상
+       → PCA+SPE가 잔여 점프를 추가 흡수하는 효과
+
+  3. Bearing 4의 불안정한 RUL
+     - sigma_v가 매우 작고(0.013) sigma_w가 큼(0.082) → 과추정
+     - 다른 3개 베어링과 열화 패턴이 상이 (고장 유형 차이 때문 추정)
+
+[다음 단계]
+  → HI의 Monotonicity를 높이기 위한 추가 전략:
+    1. HI에 cumulative max 적용 (강제 단조화)
+    2. Isotonic regression 기반 HI 스무딩
+    3. 또는 논문의 LOESS 스무딩 적용
+  → Particle Filter로 확장 (비선형 measurement function 지원)

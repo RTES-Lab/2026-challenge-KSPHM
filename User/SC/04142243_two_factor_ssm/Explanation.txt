@@ -1,0 +1,102 @@
+================================================================================
+실험 설명 (Experiment Explanation)
+================================================================================
+
+[생성 일시]
+2026-04-14 22:43 (KST)
+
+[참고 논문]
+Li et al. (2019), "Remaining useful life prediction of machinery under
+time-varying operating conditions based on a two-factor state-space model",
+Reliability Engineering and System Safety, 186, 88-100.
+DOI: 10.1016/j.ress.2019.02.017
+
+[사용 코드]
+code/two_factor_ssm.py
+
+[이전 실험 흐름]
+  04140103 → PCA PC1 HI (비단조 문제)
+  04140132 → SPE HI (FPT 임계값 붕괴)
+  04140135 → KPCA HI (동일 문제)
+  04140144 → 특징 품질 분석 (단조성/추세성 기반 53개 특징 선별)
+  04142243 ← 현재: Two-Factor SSM 적용
+
+[논문의 두 가지 핵심 인사이트]
+  1. 운전조건 변화 → 열화 속도 변화 (State Equation에 반영)
+     mu(c_k): RPM에 따라 다른 drift rate
+  2. 운전조건 변화 → 신호 급변/점프 (Measurement Equation에 반영)
+     gamma(c_k): RPM에 따른 HI 오프셋 보정
+
+[모델 수식]
+  State Eq.:   x_k = x_{k-1} + mu[c_k]*dt + sigma_w * w_k
+  Meas.  Eq.:  y_k = x_k + gamma[c_k] + sigma_v * v_k
+
+  x_k:       latent 열화 상태
+  y_k:       관측 HI (진동 특징 → SPE 기반)
+  c_k:       운전조건 (RPM 이산화, 3단계: 저/중/고속)
+  mu[c_k]:   운전조건 의존 열화 속도
+  gamma[c_k]:운전조건 의존 신호 오프셋
+  sigma_w/v: 프로세스/관측 노이즈 표준편차
+
+[구현 구조]
+  Step 0: Operation CSV → 진동파일 인덱스별 평균 RPM 추출 (10s 샘플링 활용)
+  Step 1: 선별 53개 특징 (04140144 결과) → SPE HI 구성 (PCA 5성분)
+  Step 2: RPM 이산화 (분위수 기반 3구간)
+  Step 3: TwoFactorSSM 클래스 (Kalman Filter + MLE)
+  Step 4: MLE로 파라미터 추정 (Nelder-Mead, neg log-likelihood 최소화)
+  Step 5: Kalman Filter로 온라인 상태 추정
+  Step 6: FPT 탐지 (정상 구간 μ+3σ 임계값)
+  Step 7: Monte Carlo RUL 예측 (2000 입자)
+  Step 8: Leave-One-Out 교차 검증 (4-fold)
+
+[데이터 분할 전략]
+  - Train/Val/Test용 독립 데이터 없음 → Leave-One-Out
+  - 3개 베어링으로 파라미터 학습, 나머지 1개 베어링에서 RUL 예측
+  - 4가지 조합 회전 → 평균 성능 평가
+
+[데이터 특이사항]
+  - Train1~4: 각각 다른 종류의 미세 고장 인가 후 운전 (고장 유형 미공개)
+  - 가변속 조건: 700~950 RPM, 1시간 단위 변동
+  - Operation 데이터: 10초 샘플링, 진동과 타임스탬프 정렬 필요
+  - 마지막 데이터 이후 9분 미수집 구간 중 고장 가능 → 실제 RUL과 차이 존재
+
+[생성 파일]
+  output/Bearing{1~4}_SSM_result.csv   : 시계열 상태 추정 결과
+  output/Bearing{1~4}_SSM.png          : 상태 추정 + RUL 분포 플롯
+  output/All_SSM_comparison.png        : 4베어링 비교
+  output/SSM_summary.csv               : LOO 요약 통계
+
+[확인된 문제점]
+  → 실험 실행 후 업데이트 예정
+
+[다음 단계]
+  → 결과 분석 후 개선 (gamma 함수 파라미터 형태 변경, 특징 조합 조정 등)
+================================================================================
+
+[확인된 문제점] (실험 후 업데이트)
+  1. FPT = 마지막 파일 (모든 베어링)
+     - HI(SPE 기반)가 임계값 0.3 미만에서 대부분 시간을 보내다가 마지막에만 스파이크
+     - Kalman filter의 sigma_v (측정 노이즈)가 크게 추정됨
+       → Kalman gain K ≈ 0 → 상태가 거의 업데이트 안 됨 → FPT 탐지 실패
+
+  2. sigma_w → 최솟값(1e-6)으로 수렴
+     - 프로세스 노이즈가 0에 수렴: 상태 예측의 불확실성을 매우 작게 봄
+     - 관측 노이즈(sigma_v)가 상대적으로 너무 커서 관측값을 무시
+
+  3. 비현실적 RUL 예측 (수십 시간)
+     - 마지막 상태 x_final이 임계값에 미도달
+     - Monte Carlo에서 임계값까지 수십~수백 스텝 소요
+
+  근본 원인:
+    - 현재 HI(SPE)가 Wiener process (선형 단조 증가) 가정에 맞지 않는 스파이크 패턴
+    - 정상 구간 변동이 Heat map 분석 결과대로 RPM에 의해 크게 교란됨
+    - 논문의 전제: HI가 단조 증가 경향의 degradation signal이어야 함
+
+[다음 단계]
+  1. HI 재설계: 단조성이 명확한 HI 구성 필요
+     - cumulative max 적용 또는
+     - 논문에서 제안한 방식대로 각 운전조건별 HI 정규화 후 SSM 적용
+  2. 운전조건 보정 HI: RPM별 특징 정규화(각 RPM 구간의 평균/분산으로 z-score)
+     → 이렇게 하면 gamma(c_k) 효과가 HI에 미리 제거됨
+  3. Measurement equation: gamma를 학습 대신 데이터 전처리로 처리
+================================================================================
