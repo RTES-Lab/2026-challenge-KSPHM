@@ -1,0 +1,14 @@
+{
+  "lgb_params": {
+    "learning_rate": 0.054705243303961336,
+    "num_leaves": 125,
+    "max_depth": 9,
+    "min_child_samples": 23,
+    "feature_fraction": 0.7779557286909742,
+    "bagging_fraction": 0.619720671481651,
+    "bagging_freq": 10,
+    "reg_alpha": 0.0009600126702798027,
+    "reg_lambda": 0.00033009476184881566
+  },
+  "scale": 0.95
+}
