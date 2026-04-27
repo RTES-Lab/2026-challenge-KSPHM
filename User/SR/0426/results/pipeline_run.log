@@ -1,0 +1,242 @@
+[Mon Apr 27 07:32:07 KST 2026] === Step 1: Feature extraction (GLCT-GWO) ===
+
+=== Train1 (126 files) ===
+  10/126 files done
+  20/126 files done
+  30/126 files done
+  40/126 files done
+  50/126 files done
+  60/126 files done
+  70/126 files done
+  80/126 files done
+  90/126 files done
+  100/126 files done
+  110/126 files done
+  120/126 files done
+[save] features/Train1_features.csv (126 rows, 130 cols, 2477s)
+
+=== Train2 (114 files) ===
+  10/114 files done
+  20/114 files done
+  30/114 files done
+  40/114 files done
+  50/114 files done
+  60/114 files done
+  70/114 files done
+  80/114 files done
+  90/114 files done
+  100/114 files done
+  110/114 files done
+[save] features/Train2_features.csv (114 rows, 130 cols, 1982s)
+
+=== Train3 (89 files) ===
+  10/89 files done
+  20/89 files done
+  30/89 files done
+  40/89 files done
+  50/89 files done
+  60/89 files done
+  70/89 files done
+  80/89 files done
+[save] features/Train3_features.csv (89 rows, 130 cols, 1604s)
+
+=== Train4 (137 files) ===
+  10/137 files done
+  20/137 files done
+  30/137 files done
+  40/137 files done
+  50/137 files done
+  60/137 files done
+  70/137 files done
+  80/137 files done
+  90/137 files done
+  100/137 files done
+  110/137 files done
+  120/137 files done
+  130/137 files done
+[save] features/Train4_features.csv (137 rows, 130 cols, 2423s)
+
+[Mon Apr 27 09:53:34 KST 2026] === Step 2: LOOCV training ===
+[load] Train1: 126 files, lifetime ≈ 1250 min
+[load] Train2: 114 files, lifetime ≈ 1130 min
+[load] Train3: 89 files, lifetime ≈ 880 min
+[load] Train4: 137 files, lifetime ≈ 1370 min
+[features] 127 feature columns
+
+============================================================
+FOLD: val=Train1  train=['Train2', 'Train3', 'Train4']
+============================================================
+    ep   0  train=7.1102  val=6.8244  vscore=0.434  (best=0.434)
+    ep  10  train=0.9431  val=1.2919  vscore=0.340  (best=0.470)
+    ep  20  train=0.7384  val=1.4131  vscore=0.308  (best=0.470)
+    ep  30  train=0.6096  val=1.4130  vscore=0.310  (best=0.470)
+    ep  40  train=0.4953  val=1.3077  vscore=0.336  (best=0.470)
+    ep  50  train=0.3784  val=1.2420  vscore=0.363  (best=0.470)
+    ep  60  train=0.3807  val=1.1525  vscore=0.388  (best=0.470)
+    ep  70  train=0.2786  val=1.2176  vscore=0.372  (best=0.470)
+    ep  80  train=0.2773  val=1.1452  vscore=0.393  (best=0.470)
+    ep  90  train=0.2334  val=1.1898  vscore=0.379  (best=0.470)
+    ep 100  train=0.2476  val=1.1953  vscore=0.378  (best=0.470)
+    ep 110  train=0.2433  val=1.1774  vscore=0.383  (best=0.470)
+    ep 119  train=0.2543  val=1.1804  vscore=0.382  (best=0.470)
+  [fold Train1] best val_score = 0.4704
+
+============================================================
+FOLD: val=Train2  train=['Train1', 'Train3', 'Train4']
+============================================================
+    ep   0  train=6.8948  val=7.0577  vscore=0.433  (best=0.433)
+    ep  10  train=1.0913  val=1.1659  vscore=0.494  (best=0.497)
+    ep  20  train=0.7382  val=1.2126  vscore=0.484  (best=0.515)
+    ep  30  train=0.6257  val=1.5390  vscore=0.459  (best=0.515)
+    ep  40  train=0.4847  val=2.3322  vscore=0.392  (best=0.515)
+    ep  50  train=0.4317  val=2.4859  vscore=0.375  (best=0.515)
+    ep  60  train=0.4050  val=2.7521  vscore=0.340  (best=0.515)
+    ep  70  train=0.3701  val=2.6711  vscore=0.350  (best=0.515)
+    ep  80  train=0.3169  val=2.7208  vscore=0.343  (best=0.515)
+    ep  90  train=0.3398  val=2.6746  vscore=0.349  (best=0.515)
+    ep 100  train=0.3148  val=2.8032  vscore=0.334  (best=0.515)
+    ep 110  train=0.2962  val=2.7642  vscore=0.339  (best=0.515)
+    ep 119  train=0.2968  val=2.7555  vscore=0.340  (best=0.515)
+  [fold Train2] best val_score = 0.5150
+
+============================================================
+FOLD: val=Train3  train=['Train1', 'Train2', 'Train4']
+============================================================
+    ep   0  train=6.7893  val=7.1629  vscore=0.433  (best=0.433)
+    ep  10  train=0.9022  val=3.4478  vscore=0.434  (best=0.439)
+    ep  20  train=0.8811  val=4.6715  vscore=0.436  (best=0.439)
+    ep  30  train=0.7136  val=6.4094  vscore=0.441  (best=0.441)
+    ep  40  train=0.5947  val=7.7449  vscore=0.448  (best=0.451)
+    ep  50  train=0.5378  val=6.7891  vscore=0.464  (best=0.464)
+    ep  60  train=0.4678  val=7.2968  vscore=0.478  (best=0.478)
+    ep  70  train=0.4323  val=7.2006  vscore=0.495  (best=0.495)
+    ep  80  train=0.3722  val=8.5146  vscore=0.501  (best=0.504)
+    ep  90  train=0.3734  val=6.6761  vscore=0.508  (best=0.508)
+    ep 100  train=0.3185  val=7.8033  vscore=0.508  (best=0.508)
+    ep 110  train=0.3025  val=7.7612  vscore=0.508  (best=0.508)
+    ep 119  train=0.3493  val=7.7032  vscore=0.508  (best=0.508)
+  [fold Train3] best val_score = 0.5084
+
+============================================================
+FOLD: val=Train4  train=['Train1', 'Train2', 'Train3']
+============================================================
+    ep   0  train=7.5743  val=5.7821  vscore=0.437  (best=0.437)
+    ep  10  train=0.9814  val=1.4432  vscore=0.299  (best=0.479)
+    ep  20  train=0.8993  val=1.4551  vscore=0.297  (best=0.479)
+    ep  30  train=0.8103  val=1.6271  vscore=0.270  (best=0.479)
+    ep  40  train=0.7138  val=1.5603  vscore=0.281  (best=0.479)
+    ep  50  train=0.6764  val=1.5852  vscore=0.276  (best=0.479)
+    ep  60  train=0.5599  val=1.5624  vscore=0.280  (best=0.479)
+    ep  70  train=0.4048  val=1.6101  vscore=0.273  (best=0.479)
+    ep  80  train=0.3687  val=1.5699  vscore=0.279  (best=0.479)
+    ep  90  train=0.3553  val=1.5686  vscore=0.282  (best=0.479)
+    ep 100  train=0.3619  val=1.5785  vscore=0.279  (best=0.479)
+    ep 110  train=0.3649  val=1.5785  vscore=0.279  (best=0.479)
+    ep 119  train=0.3284  val=1.5791  vscore=0.279  (best=0.479)
+  [fold Train4] best val_score = 0.4785
+
+============================================================
+LOOCV AVERAGE val_score = 0.4931
+============================================================
+
+============================================================
+FINAL: Training on ALL data for submission model
+============================================================
+    ep   0  train=6.8510  late_score=0.008  (best=0.008)
+    ep  10  train=1.0387  late_score=0.329  (best=0.347)
+    ep  20  train=0.7357  late_score=0.364  (best=0.414)
+    ep  30  train=0.6243  late_score=0.400  (best=0.442)
+    ep  40  train=0.4451  late_score=0.462  (best=0.463)
+    ep  50  train=0.4398  late_score=0.507  (best=0.531)
+    ep  60  train=0.3205  late_score=0.625  (best=0.625)
+    ep  70  train=0.2835  late_score=0.606  (best=0.659)
+    ep  80  train=0.2560  late_score=0.668  (best=0.696)
+    ep  90  train=0.2345  late_score=0.679  (best=0.710)
+    ep 100  train=0.2499  late_score=0.717  (best=0.733)
+    ep 110  train=0.2341  late_score=0.708  (best=0.733)
+    ep 119  train=0.2216  late_score=0.721  (best=0.733)
+  [final] best late_score = 0.7331
+
+[save] results/loocv_results.txt
+[save] plots/loocv_scores.png
+
+✓ LOOCV 완료. 평균 val_score = 0.4931
+✓ 최종 모델 (전체 학습) late_score = 0.7331
+  제출용 체크포인트: checkpoints/loocv/final/best.pt
+
+[Mon Apr 27 09:57:32 KST 2026] === Step 3: Sanity checks (LOOCV fold checkpoints) ===
+[Mon Apr 27 09:57:32 KST 2026] -- Train1
+sanity_check.py:29: RuntimeWarning: overflow encountered in exp
+  np.exp( ln_half * err / 50.0))
+
+=== Train1: lifetime=1250 min, L_ref=1190 min ===
+ idx    t_min  rul_norm_pred  rul_pred_sec  rul_true_sec  score
+ 116 1160.000          0.400     28527.176      5400.000  0.000
+ 117 1170.000          0.398     28402.722      4800.000  0.000
+ 118 1180.000          0.404     28857.911      4200.000  0.000
+ 119 1190.000          0.405     28886.731      3600.000  0.000
+ 120 1200.000          0.408     29109.321      3000.000  0.000
+ 121 1210.000          0.399     28476.430      2400.000  0.000
+ 122 1220.000          0.400     28585.907      1800.000  0.000
+ 123 1230.000          0.400     28542.079      1200.000  0.000
+ 124 1240.000          0.400     28594.349       600.000  0.000
+ 125 1250.000          0.392     27956.419         0.000  0.000
+
+  mean score across all submission points: 0.472
+  score at last frame (the actual submission): 0.000
+[Mon Apr 27 09:57:44 KST 2026] -- Train2
+
+=== Train2: lifetime=1130 min, L_ref=1190 min ===
+ idx    t_min  rul_norm_pred  rul_pred_sec  rul_true_sec  score
+ 104 1040.000          0.000        29.179      5400.000  0.252
+ 105 1050.000          0.003       240.875      4800.000  0.268
+ 106 1060.000          0.001        53.452      4200.000  0.254
+ 107 1070.000          0.000        26.720      3600.000  0.253
+ 108 1080.000          0.001        89.508      3000.000  0.261
+ 109 1090.000          0.007       484.868      2400.000  0.331
+ 110 1100.000          0.000         3.249      1800.000  0.251
+ 111 1110.000          0.000         0.083      1200.000  0.250
+ 112 1120.000          0.000         0.031       600.000  0.250
+ 113 1130.000          0.000         1.653         0.000  0.000
+
+  mean score across all submission points: 0.510
+  score at last frame (the actual submission): 0.000
+[Mon Apr 27 09:57:57 KST 2026] -- Train3
+sanity_check.py:29: RuntimeWarning: overflow encountered in exp
+  np.exp( ln_half * err / 50.0))
+
+=== Train3: lifetime=880 min, L_ref=1190 min ===
+ idx   t_min  rul_norm_pred  rul_pred_sec  rul_true_sec  score
+  79 790.000          0.267     19096.888      5400.000  0.000
+  80 800.000          0.287     20465.089      4800.000  0.000
+  81 810.000          0.245     17502.585      4200.000  0.000
+  82 820.000          0.270     19298.245      3600.000  0.000
+  83 830.000          0.340     24267.227      3000.000  0.000
+  84 840.000          0.607     43310.447      2400.000  0.000
+  85 850.000          0.814     58133.389      1800.000  0.000
+  86 860.000          0.528     37664.677      1200.000  0.000
+  87 870.000          0.611     43611.220       600.000  0.000
+  88 880.000          0.423     30215.306         0.000  0.000
+
+  mean score across all submission points: 0.460
+  score at last frame (the actual submission): 0.000
+[Mon Apr 27 09:58:10 KST 2026] -- Train4
+
+=== Train4: lifetime=1370 min, L_ref=1190 min ===
+ idx    t_min  rul_norm_pred  rul_pred_sec  rul_true_sec  score
+ 127 1270.000          0.118      8439.609      6000.000  0.244
+ 128 1280.000          0.163     11646.910      5400.000  0.018
+ 129 1290.000          0.257     18350.157      4800.000  0.000
+ 130 1300.000          0.285     20358.501      4200.000  0.000
+ 131 1310.000          0.310     22133.064      3600.000  0.000
+ 132 1320.000          0.319     22751.108      3000.000  0.000
+ 133 1330.000          0.305     21784.076      2400.000  0.000
+ 134 1340.000          0.284     20296.545      1800.000  0.000
+ 135 1350.000          0.220     15697.499      1200.000  0.000
+ 136 1360.000          0.180     12841.921       600.000  0.000
+
+  mean score across all submission points: 0.461
+  score at last frame (the actual submission): 0.000
+
+[Mon Apr 27 09:58:23 KST 2026] === Pipeline complete ===
+Log saved to: results/pipeline_20260427_073207.log
