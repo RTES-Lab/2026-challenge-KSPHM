@@ -1,0 +1,6 @@
+LOOCV 결과 (v4 FDR 인라인 HI)
+LSTM-A (HI-A 5seeds median): 0.2500
+LSTM-B (HI-B 5seeds median): 0.2968
+LGBM   (HI-A flat feat):     0.2920
+Ensemble (weighted avg):      0.4109
+Best calibration factor:      1.00

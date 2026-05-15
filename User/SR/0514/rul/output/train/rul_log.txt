@@ -1,0 +1,54 @@
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.4359
+  Bearing 2 평균 Score: 0.4353
+  Bearing 3 평균 Score: 0.3612
+  Bearing 4 평균 Score: 0.5567
+--------------------------------------------------
+  전체 평균 Score: 0.4579
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.7146
+  Bearing 2 평균 Score: 0.5777
+  Bearing 3 평균 Score: 0.5993
+  Bearing 4 평균 Score: 0.4297
+--------------------------------------------------
+  전체 평균 Score: 0.5749
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.4360
+  Bearing 2 평균 Score: 0.5385
+  Bearing 3 평균 Score: 0.5366
+  Bearing 4 평균 Score: 0.4304
+--------------------------------------------------
+  전체 평균 Score: 0.4780
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.4361
+  Bearing 2 평균 Score: 0.4389
+  Bearing 3 평균 Score: 0.7145
+  Bearing 4 평균 Score: 0.4311
+--------------------------------------------------
+  전체 평균 Score: 0.4869
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.2500
+  Bearing 2 평균 Score: 0.2500
+  Bearing 3 평균 Score: 0.7160
+  Bearing 4 평균 Score: 0.5675
+--------------------------------------------------
+  전체 평균 Score: 0.4311
+
+▶ Experiment: 04262315_lstm_rul (LSTM on v5_v3_best HI, Full Obs Range)
+--------------------------------------------------
+  Bearing 1 평균 Score: 0.6950
+  Bearing 2 평균 Score: 0.5210
+  Bearing 3 평균 Score: 0.6190
+  Bearing 4 평균 Score: 0.5512
+--------------------------------------------------
+  전체 평균 Score: 0.5956
