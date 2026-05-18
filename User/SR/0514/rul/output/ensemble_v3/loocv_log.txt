@@ -1,0 +1,14 @@
+LOOCV 결과 — LSTM-A 단독 vs LGBM+LSTM-A
+LGBM   평균: 0.2920
+LSTM-A 평균: 0.4287
+LGBM+LSTM-A (uncalibrated): 0.4271
+
+Calibration 후:
+  LSTM-A 단독: cf=1.00 → 0.4287
+  LGBM+LSTM-A: cf=0.76 → 0.4326
+
+Fold 상세:
+  B1: LGBM=0.4164  LSTM-A=0.4004  2-model=0.3738  w=[LGBM=0.510,A=0.490]
+  B2: LGBM=0.3315  LSTM-A=0.4933  2-model=0.5337  w=[LGBM=0.402,A=0.598]
+  B3: LGBM=0.0617  LSTM-A=0.4637  2-model=0.4430  w=[LGBM=0.117,A=0.883]
+  B4: LGBM=0.3584  LSTM-A=0.3574  2-model=0.3578  w=[LGBM=0.501,A=0.499]

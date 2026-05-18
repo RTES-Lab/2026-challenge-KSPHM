@@ -1,18 +1,16 @@
 """
-앙상블 RUL 예측 — v4 FDR HI 인라인 계산 버전
-========================
+앙상블 RUL 예측 v2 — LGBM + LSTM-A (window-minmax HI) + LSTM-C
+================================================================
+LSTM-A 추가 (Approach A):
+  - v4 FDR HI를 window 내부 minmax로 정규화 → shape만 학습
+  - Bearing3 max(0.152) < Bearing4 min(0.244) HI 범위 역전 문제 우회
+  - obs_fraction(obs_idx / MEAN_TRAIN_LIFE) 추가로 temporal context 제공
+  - Piecewise Linear RUL 라벨 (LSTM-C와 동일)
+
 모델 구성:
-  - LGBM   : HI-A flat 피처 (최근 10개 HI + 기울기/mean/std/max) + 비대칭 custom obj
-  - LSTM-C : raw 8 signal features + piecewise linear RUL label + 5 seeds median
-
-HI 계산 방식 (v4 FDR 인라인):
-  - LOOCV fold별: exclude_bid 제외 3개 베어링 기준으로 baseline/p5/p95 계산 → 4개 전체에 적용
-  - Test 추론: 전체 4개 베어링 기준으로 baseline/p5/p95 계산 → train HI 생성
-  - Test HI: 사전 계산된 test_v4 파일 사용 (hi_test_v4.py의 global 4-bearing 기준과 동일)
-
-앙상블:
-  - LOOCV fold별 모델 점수 → 가중치 결정 (클램핑 [0.1, 0.5])
-  - 최종 calibration factor (0.7~1.0 그리드 서치)
+  - LGBM   : HI-A flat 피처 (직전 10개 HI + 기울기/mean/std/max) + 비대칭 custom obj
+  - LSTM-A : [window_minmax_HI, obs_fraction] 시퀀스, piecewise RUL, 5 seeds median
+  - LSTM-C : raw 8 signal features + piecewise RUL, 5 seeds median
 """
 
 import numpy as np
@@ -35,22 +33,19 @@ BASE           = Path("/data/home/ksphm/2026-challenge-KSPHM/User/SR/0514")
 TRAIN_FEAT_DIR = Path("/data/home/ksphm/2026-challenge-KSPHM/User/SC/HI/04142304_signal_transform_v2/output")
 TEST_FEAT_DIR  = Path("/data/home/ksphm/2026-challenge-KSPHM/User/SC/HI/05072245_signal_transform_v5_test/output")
 HI_A_TEST      = BASE / "hi/output/test_v4"
-OUT_DIR        = BASE / "rul/output/ensemble"
+OUT_DIR        = BASE / "rul/output/ensemble_v2"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 BEARINGS        = [1, 2, 3, 4]
 TEST_IDS        = [1, 2, 3, 4, 5, 6]
 SEQ_LENGTH      = 10
-EPOCHS          = 150
-BATCH_SIZE      = 32
 MEAN_TRAIN_LIFE = 116.5   # (126+114+89+137)/4
 INTERVAL_SEC    = 600
 SEEDS           = [42, 7, 123, 0, 99]
 
-# HI v4 FDR 파라미터 (hi_train.py 그리드서치 최적값)
 BR_A, ALPHA_A = 0.25, 0.1
 
-# ── HI-A 피처 (주파수도메인) ──────────────────────────────────────────────
+# ── HI-A 피처 ────────────────────────────────────────────────────────────
 FEATURE_Q = {
     "ch3_high_band":   0.4315732105779938,
     "ch4_high_band":   0.41934581236265145,
@@ -69,7 +64,7 @@ ALL_FEATS = list(FEATURE_Q.keys())
 
 
 # =========================================================
-# V4 FDR HI 인라인 계산 헬퍼 함수
+# V4 FDR HI 인라인 계산 헬퍼
 # =========================================================
 def _moving_avg(x: np.ndarray, window: int) -> np.ndarray:
     if window <= 1:
@@ -108,7 +103,6 @@ def _fdr_ratios(feat_matrix: np.ndarray, feature_names: list,
 
 
 def _fdr_baseline(dfs: dict, br: float, exclude_bid: int, feat_list: list) -> dict:
-    """exclude_bid를 제외한 베어링들의 레짐별 건강구간 평균 μ."""
     feat_vals = {(r, f): [] for r in [0, 1] for f in feat_list}
     for bid, df in dfs.items():
         if bid == exclude_bid:
@@ -134,10 +128,8 @@ def _fdr_baseline(dfs: dict, br: float, exclude_bid: int, feat_list: list) -> di
 def _group_stats(dfs: dict, br: float, exclude_bid: int,
                  feat_groups: dict, feat_q: dict, feat_list: list,
                  baseline: dict) -> dict:
-    """exclude_bid 제외 학습 베어링에서 그룹별 direction/p5/p95 계산."""
     all_scores = {g: [] for g in feat_groups}
     dir_votes  = {g: [] for g in feat_groups}
-
     for bid, df in dfs.items():
         if bid == exclude_bid:
             continue
@@ -154,7 +146,6 @@ def _group_stats(dfs: dict, br: float, exclude_bid: int,
             rho, _  = spearmanr(np.arange(len(score)), score)
             dir_votes[gname].append(+1 if (not np.isnan(rho) and rho >= 0) else -1)
             all_scores[gname].extend(score.tolist())
-
     stats = {}
     for gname in feat_groups:
         direction = +1 if sum(dir_votes[gname]) >= 0 else -1
@@ -169,7 +160,6 @@ def _group_stats(dfs: dict, br: float, exclude_bid: int,
 
 def _v4fdr_hi(df: pd.DataFrame, baseline: dict, group_stats: dict,
               feat_groups: dict, feat_q: dict, ema_alpha: float) -> np.ndarray:
-    """단일 베어링의 v4 FDR HI 계산."""
     cond = df["cond"].values
     sub_his, group_weights = {}, {}
     for gname, feats in feat_groups.items():
@@ -186,10 +176,8 @@ def _v4fdr_hi(df: pd.DataFrame, baseline: dict, group_stats: dict,
         score   = _ema(score, alpha=ema_alpha)
         sub_his[gname]       = np.clip(score, 0.0, 1.0)
         group_weights[gname] = np.mean([feat_q[f] for f in available])
-
     if not sub_his:
         return np.zeros(len(df))
-
     sub_mat = np.column_stack([sub_his[g] for g in sub_his])
     w = np.array([group_weights[g] for g in sub_his], dtype=float)
     w /= w.sum() + 1e-12
@@ -198,7 +186,6 @@ def _v4fdr_hi(df: pd.DataFrame, baseline: dict, group_stats: dict,
 
 
 def load_train_features() -> dict:
-    """Train 베어링 feature CSV + cond 로드."""
     dfs = {}
     for bid in BEARINGS:
         df = pd.read_csv(TRAIN_FEAT_DIR / f"Bearing{bid}_features_transformed.csv")
@@ -209,17 +196,11 @@ def load_train_features() -> dict:
 
 
 def compute_fold_hi_a(dfs: dict, exclude_bid: int) -> dict:
-    """
-    LOOCV fold용 HI-A 계산 (LGBM용).
-    exclude_bid 제외 3개 베어링 기준 baseline/stats → 4개 전체에 동일 기준 적용.
-    exclude_bid=0 → 없는 ID이므로 4개 전체 포함 (Test 추론용).
-    """
     baseline_a    = _fdr_baseline(dfs, BR_A, exclude_bid, ALL_FEATS)
     group_stats_a = _group_stats(dfs, BR_A, exclude_bid,
                                   FEATURE_GROUPS, FEATURE_Q, ALL_FEATS, baseline_a)
-    hi_a = {b: _v4fdr_hi(dfs[b], baseline_a, group_stats_a,
-                           FEATURE_GROUPS, FEATURE_Q, ALPHA_A) for b in BEARINGS}
-    return hi_a
+    return {b: _v4fdr_hi(dfs[b], baseline_a, group_stats_a,
+                          FEATURE_GROUPS, FEATURE_Q, ALPHA_A) for b in BEARINGS}
 
 
 # ── 대회 채점 함수 ─────────────────────────────────────────────────────────
@@ -266,8 +247,7 @@ def train_lgbm(hi_dict, train_bids):
     X_list, Y_list = [], []
     for b in train_bids:
         x, y = make_lgbm_features(hi_dict[b])
-        X_list.append(x)
-        Y_list.append(y)
+        X_list.append(x); Y_list.append(y)
     X_train = np.concatenate(X_list)
     Y_train = np.concatenate(Y_list)
     dtrain = lgb.Dataset(X_train, label=Y_train)
@@ -288,18 +268,167 @@ def predict_lgbm(model, hi_array):
 
 
 # =========================================================
-# LSTM-C: 직접 RUL 예측 (Piecewise Linear RUL, Raw Features)
+# LSTM-A: window-minmax HI + obs_fraction (Approach A)
 # =========================================================
-# train/test 피처 파일 공통 컬럼만 사용
+N_FEAT_A = 2  # [window_minmax_hi, obs_fraction]
+
+# Piecewise RUL 라벨 파라미터 (v3 HI > 0.3 최초 돌파 기준)
+NORMAL_UNTIL_A = {1: 89, 2: 92, 3: 62, 4: 78}
+EOL_A          = {1: 126, 2: 114, 3: 89, 4: 137}
+
+
+def rul_labels_a(n_total: int, bid: int) -> np.ndarray:
+    nu  = NORMAL_UNTIL_A[bid]
+    eol = EOL_A[bid]
+    idx = np.arange(n_total)
+    return np.where(idx <= nu, eol - nu, np.maximum(eol - idx, 0)).astype(float)
+
+
+def make_seqs_a(hi_arr: np.ndarray, rul_arr: np.ndarray,
+                seq_len: int, start_obs: int = 0):
+    """window-minmax HI + obs_fraction 시퀀스 생성."""
+    n = len(hi_arr)
+    X, y = [], []
+    for i in range(n - seq_len):
+        window = hi_arr[i:i + seq_len].copy()
+        w_min, w_max = window.min(), window.max()
+        window_norm = (window - w_min) / (w_max - w_min + 1e-8)
+        obs_idx  = start_obs + i + np.arange(seq_len)
+        obs_frac = np.clip(obs_idx / MEAN_TRAIN_LIFE, 0.0, 2.0)
+        seq = np.stack([window_norm, obs_frac], axis=1)  # (seq_len, 2)
+        X.append(seq)
+        y.append(float(rul_arr[i + seq_len]))
+    return np.array(X), np.array(y)
+
+
+class LSTMRegressorA(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lstm = nn.LSTM(N_FEAT_A, 64, num_layers=2, batch_first=True, dropout=0.2)
+        self.fc = nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 1))
+
+    def forward(self, x):
+        _, (h, _) = self.lstm(x)
+        return self.fc(h[-1]).squeeze(-1)
+
+
+def train_model_a(X_train: np.ndarray, y_train: np.ndarray,
+                  rul_scale: float, seed: int, device) -> LSTMRegressorA:
+    torch.manual_seed(seed)
+    y_norm = y_train / rul_scale
+    Xt = torch.tensor(X_train, dtype=torch.float32)
+    yt = torch.tensor(y_norm,  dtype=torch.float32)
+    n_val = max(1, int(len(Xt) * 0.1))
+    tr_dl = DataLoader(TensorDataset(Xt[:-n_val], yt[:-n_val]),
+                       batch_size=64, shuffle=True)
+    val_dl = DataLoader(TensorDataset(Xt[-n_val:], yt[-n_val:]), batch_size=64)
+
+    model = LSTMRegressorA().to(device)
+    opt   = torch.optim.Adam(model.parameters(), lr=1e-3)
+    crit  = nn.MSELoss()
+
+    best_val, patience, best_state = np.inf, 0, None
+    for _ in range(200):
+        model.train()
+        for xb, yb in tr_dl:
+            opt.zero_grad()
+            crit(model(xb.to(device)), yb.to(device)).backward()
+            opt.step()
+        model.eval()
+        with torch.no_grad():
+            vl = np.mean([crit(model(xb.to(device)), yb.to(device)).item()
+                          for xb, yb in val_dl])
+        if vl < best_val:
+            best_val, patience = vl, 0
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            patience += 1
+            if patience >= 20:
+                break
+    model.load_state_dict(best_state)
+    return model
+
+
+def predict_lstm_a_ensemble(hi_dict: dict, train_bids: list, test_bid: int,
+                             device) -> np.ndarray:
+    """LSTM-A 5-seed median 앙상블 (LOOCV 용)."""
+    X_list, y_list = [], []
+    for b in train_bids:
+        X, y = make_seqs_a(hi_dict[b], rul_labels_a(len(hi_dict[b]), b), SEQ_LENGTH)
+        X_list.append(X); y_list.append(y)
+    X_train = np.concatenate(X_list)
+    y_train = np.concatenate(y_list)
+    rul_scale = float(y_train.max())
+
+    X_test, _ = make_seqs_a(hi_dict[test_bid],
+                             rul_labels_a(len(hi_dict[test_bid]), test_bid),
+                             SEQ_LENGTH)
+    Xt = torch.tensor(X_test, dtype=torch.float32)
+
+    all_preds = []
+    for s in SEEDS:
+        m = train_model_a(X_train, y_train, rul_scale, s, device)
+        m.eval()
+        with torch.no_grad():
+            p = m(Xt.to(device)).cpu().numpy()
+        all_preds.append(np.maximum(p * rul_scale, 0.0))
+    return np.median(all_preds, axis=0)
+
+
+def build_lstm_a_for_test(hi_dict: dict, device):
+    """전체 Train 4개 베어링으로 LSTM-A 학습."""
+    X_list, y_list = [], []
+    for b in BEARINGS:
+        X, y = make_seqs_a(hi_dict[b], rul_labels_a(len(hi_dict[b]), b), SEQ_LENGTH)
+        X_list.append(X); y_list.append(y)
+    X_train = np.concatenate(X_list)
+    y_train = np.concatenate(y_list)
+    rul_scale = float(y_train.max())
+
+    models = []
+    for s in SEEDS:
+        m = train_model_a(X_train, y_train, rul_scale, s, device)
+        models.append(m)
+        print(f"    LSTM-A seed={s} 완료")
+    return models, rul_scale
+
+
+def predict_lstm_a_from_models(models: list, rul_scale: float,
+                                hi_arr: np.ndarray, start_obs: int,
+                                device) -> np.ndarray:
+    """사전 학습된 LSTM-A 모델로 test HI 예측."""
+    n = len(hi_arr)
+    X = []
+    for i in range(n - SEQ_LENGTH):
+        window = hi_arr[i:i + SEQ_LENGTH].copy()
+        w_min, w_max = window.min(), window.max()
+        window_norm = (window - w_min) / (w_max - w_min + 1e-8)
+        obs_idx  = start_obs + i + np.arange(SEQ_LENGTH)
+        obs_frac = np.clip(obs_idx / MEAN_TRAIN_LIFE, 0.0, 2.0)
+        seq = np.stack([window_norm, obs_frac], axis=1)
+        X.append(seq)
+    Xt = torch.tensor(np.array(X), dtype=torch.float32).to(device)
+
+    all_preds = []
+    for m in models:
+        m.eval()
+        with torch.no_grad():
+            p = m(Xt).cpu().numpy()
+        all_preds.append(np.maximum(p * rul_scale, 0.0))
+    return np.median(all_preds, axis=0)
+
+
+# =========================================================
+# LSTM-C: raw signal features (기존 유지)
+# =========================================================
 INPUT_COLS_C = [
     "ch3_high_band", "ch4_high_band",
     "ch3_std", "ch3_total_power", "ch3_energy",
     "ch3_rms", "ch3_p2p",
     "ch4_rms",
 ]
-N_FEAT_C = len(INPUT_COLS_C)  # 8
+N_FEAT_C = len(INPUT_COLS_C)
 
-# normal_until: v3 HI > 0.3 최초 돌파 시점
 NORMAL_UNTIL_C = {1: 89, 2: 92, 3: 62, 4: 78}
 EOL_C          = {1: 126, 2: 114, 3: 89, 4: 137}
 
@@ -312,10 +441,9 @@ def rul_labels_c(n_total: int, bid: int) -> np.ndarray:
 
 
 def make_seqs_c(feat_arr: np.ndarray, rul_arr: np.ndarray, seq_len: int):
-    """N-seq_len 개 시퀀스, 라벨은 window 직후 타임스텝."""
     n = len(feat_arr)
     X = np.array([feat_arr[i:i + seq_len] for i in range(n - seq_len)])
-    y = rul_arr[seq_len:]  # positions seq_len .. n-1
+    y = rul_arr[seq_len:]
     return X, y
 
 
@@ -369,7 +497,6 @@ def train_model_c(X_train: np.ndarray, y_train: np.ndarray,
 
 def predict_lstm_c_ensemble(dfs: dict, train_bids: list, test_bid: int,
                              device) -> np.ndarray:
-    """LSTM-C 5-seed median 앙상블 예측."""
     scaler = StandardScaler()
     scaler.fit(np.concatenate([dfs[b][INPUT_COLS_C].values for b in train_bids]))
 
@@ -396,7 +523,6 @@ def predict_lstm_c_ensemble(dfs: dict, train_bids: list, test_bid: int,
 
 
 def build_lstm_c_for_test(dfs: dict, device):
-    """전체 Train 4개 베어링으로 LSTM-C 5-seed 모델 학습. Test 루프 전에 1회 호출."""
     scaler = StandardScaler()
     scaler.fit(np.concatenate([dfs[b][INPUT_COLS_C].values for b in BEARINGS]))
 
@@ -419,7 +545,6 @@ def build_lstm_c_for_test(dfs: dict, device):
 
 def predict_lstm_c_from_models(models: list, scaler, rul_scale: float,
                                 test_feat: np.ndarray, device) -> np.ndarray:
-    """사전 학습된 LSTM-C 모델로 test 피처 예측."""
     feat_s = scaler.transform(test_feat)
     n = len(feat_s)
     X_test = np.array([feat_s[i:i + SEQ_LENGTH] for i in range(n - SEQ_LENGTH)])
@@ -451,8 +576,8 @@ def run_loocv():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  Device: {device}")
 
-    results = {b: {"lgbm": [], "lstm_c": [], "ensemble": []} for b in BEARINGS}
-    model_fold_scores = {"lgbm": [], "lstm_c": []}
+    results = {b: {} for b in BEARINGS}
+    model_fold_scores = {"lgbm": [], "lstm_a": [], "lstm_c": []}
     fold_weights = {}
 
     for test_bid in BEARINGS:
@@ -460,10 +585,8 @@ def run_loocv():
         print(f"[LOOCV] Test Bearing {test_bid}")
         train_bids = [b for b in BEARINGS if b != test_bid]
 
-        # fold-consistent v4 HI-A 계산 (test_bid 제외 3개 기준 → 4개 전체 적용)
-        print(f"  HI-A v4 계산 (Bearing{test_bid} 제외 기준)...")
+        print(f"  HI-A v4 계산 (Bearing{test_bid} 제외)...")
         hi_a = compute_fold_hi_a(dfs, exclude_bid=test_bid)
-
         N_test = len(hi_a[test_bid])
 
         # 1. LGBM
@@ -471,61 +594,75 @@ def run_loocv():
         lgbm_model = train_lgbm(hi_a, train_bids)
         preds_lgbm = predict_lgbm(lgbm_model, hi_a[test_bid])
 
-        # 2. LSTM-C (raw features, piecewise RUL)
+        # 2. LSTM-A (window-minmax HI + obs_fraction)
+        print("  학습: LSTM-A (window-minmax HI + obs_frac, 5 seeds)...")
+        preds_a = predict_lstm_a_ensemble(hi_a, train_bids, test_bid, device)
+
+        # 3. LSTM-C (raw 8 signal features)
         print("  학습: LSTM-C (raw 8feat, piecewise RUL, 5 seeds)...")
         preds_c = predict_lstm_c_ensemble(dfs, train_bids, test_bid, device)
 
-        # 3. 각 모델 점수 계산
         obs_pts = np.arange(SEQ_LENGTH, N_test)
+
         def avg_score(preds):
             scores = [competition_score(N_test - obs, p)
                       for obs, p in zip(obs_pts, preds)]
             return float(np.nanmean(scores))
 
         sc_lgbm = avg_score(preds_lgbm)
+        sc_a    = avg_score(preds_a)
         sc_c    = avg_score(preds_c)
 
-        print(f"  → LGBM: {sc_lgbm:.4f}, LSTM-C: {sc_c:.4f}")
+        # LSTM-A 수렴 여부 진단 (전 구간 0 예측 체크)
+        a_collapse = float(np.mean(preds_a)) < 1.0
+        print(f"  → LGBM: {sc_lgbm:.4f}, LSTM-A: {sc_a:.4f} {'[COLLAPSE?]' if a_collapse else ''}, "
+              f"LSTM-C: {sc_c:.4f}")
 
         model_fold_scores["lgbm"].append(sc_lgbm)
+        model_fold_scores["lstm_a"].append(sc_a)
         model_fold_scores["lstm_c"].append(sc_c)
 
-        # 4. 가중 평균 (2 모델)
-        w = clamp_weights({"lgbm": sc_lgbm, "lstm_c": sc_c})
+        w = clamp_weights({"lgbm": sc_lgbm, "lstm_a": sc_a, "lstm_c": sc_c})
         fold_weights[test_bid] = w
-        print(f"  → 가중치: LGBM={w['lgbm']:.3f}, LSTM-C={w['lstm_c']:.3f}")
+        print(f"  → 가중치: LGBM={w['lgbm']:.3f}, LSTM-A={w['lstm_a']:.3f}, LSTM-C={w['lstm_c']:.3f}")
 
-        preds_ens = w["lgbm"] * preds_lgbm + w["lstm_c"] * preds_c
+        preds_ens = w["lgbm"] * preds_lgbm + w["lstm_a"] * preds_a + w["lstm_c"] * preds_c
         sc_ens = avg_score(preds_ens)
         print(f"  → 앙상블: {sc_ens:.4f}")
 
-        results[test_bid]["lgbm"]     = list(preds_lgbm)
-        results[test_bid]["lstm_c"]   = list(preds_c)
-        results[test_bid]["ensemble"] = list(preds_ens)
-        results[test_bid]["obs_pts"]  = list(obs_pts)
-        results[test_bid]["N"]        = N_test
+        results[test_bid] = {
+            "lgbm":     list(preds_lgbm),
+            "lstm_a":   list(preds_a),
+            "lstm_c":   list(preds_c),
+            "ensemble": list(preds_ens),
+            "obs_pts":  list(obs_pts),
+            "N":        N_test,
+        }
 
-    # 5. LOOCV 요약
+    # LOOCV 요약
     print(f"\n{'='*60}")
     print("  LOOCV 요약")
     print(f"{'='*60}")
-    overall = {k: float(np.mean(v)) for k, v in model_fold_scores.items()}
+    print(f"  {'Bearing':>8} | {'LGBM':>8} | {'LSTM-A':>8} | {'LSTM-C':>8} | {'Ensemble':>9}")
+    print(f"  {'-'*55}")
     ens_scores = []
     for test_bid in BEARINGS:
         obs_pts = results[test_bid]["obs_pts"]
         N_test  = results[test_bid]["N"]
-        preds   = results[test_bid]["ensemble"]
-        s = [competition_score(N_test - obs, p) for obs, p in zip(obs_pts, preds)]
-        ens_scores.append(float(np.nanmean(s)))
-        print(f"  Bearing {test_bid}: LGBM={model_fold_scores['lgbm'][test_bid-1]:.4f}  "
-              f"LSTM-C={model_fold_scores['lstm_c'][test_bid-1]:.4f}  "
-              f"Ensemble={ens_scores[-1]:.4f}")
+        s_ens = [competition_score(N_test - obs, p)
+                 for obs, p in zip(obs_pts, results[test_bid]["ensemble"])]
+        ens_scores.append(float(np.nanmean(s_ens)))
+        i = test_bid - 1
+        print(f"  {test_bid:>8} | {model_fold_scores['lgbm'][i]:>8.4f} | "
+              f"{model_fold_scores['lstm_a'][i]:>8.4f} | "
+              f"{model_fold_scores['lstm_c'][i]:>8.4f} | "
+              f"{ens_scores[-1]:>9.4f}")
 
-    print(f"\n  평균  : LGBM={overall['lgbm']:.4f}  "
-          f"LSTM-C={overall['lstm_c']:.4f}  "
-          f"Ensemble={np.mean(ens_scores):.4f}")
+    overall = {k: float(np.mean(v)) for k, v in model_fold_scores.items()}
+    print(f"  {'평균':>8} | {overall['lgbm']:>8.4f} | {overall['lstm_a']:>8.4f} | "
+          f"{overall['lstm_c']:>8.4f} | {np.mean(ens_scores):>9.4f}")
 
-    # 6. Calibration factor 그리드 서치
+    # Calibration factor 그리드 서치
     print("\n  [Calibration] factor 그리드 서치 (0.7~1.0)...")
     best_cf, best_cf_score = 1.0, -np.inf
     for cf in np.arange(0.70, 1.01, 0.02):
@@ -543,48 +680,41 @@ def run_loocv():
 
     print(f"\n  → Best calibration factor: {best_cf:.2f} (score={best_cf_score:.4f})")
 
-    # 결과 저장
+    # 로그 저장
     with open(OUT_DIR / "loocv_log.txt", "w", encoding="utf-8") as f:
-        f.write(f"LOOCV 결과 (v4 FDR 인라인 HI-A + LSTM-C raw features)\n")
-        f.write(f"LGBM   (HI-A flat feat):              {overall['lgbm']:.4f}\n")
-        f.write(f"LSTM-C (raw 8feat piecewise RUL):     {overall['lstm_c']:.4f}\n")
-        f.write(f"Ensemble (weighted avg, 2 models):    {np.mean(ens_scores):.4f}\n")
-        f.write(f"Best calibration factor:              {best_cf:.2f}\n")
-
-    # CSV 저장 (train LOOCV)
-    TRAIN_OUT = BASE / "rul/output/train"
-    TRAIN_OUT.mkdir(parents=True, exist_ok=True)
-    rows = []
-    for test_bid in BEARINGS:
-        obs_pts = results[test_bid]["obs_pts"]
-        N_test  = results[test_bid]["N"]
-        for obs, pred in zip(obs_pts, results[test_bid]["ensemble"]):
-            rows.append({
-                "test_bearing": test_bid,
-                "obs_cycle":    obs,
-                "rul_true":     N_test - obs,
-                "rul_pred":     pred,
-            })
-    pd.DataFrame(rows).to_csv(TRAIN_OUT / "LSTM_RUL_results.csv", index=False)
+        f.write("LOOCV 결과 (v4 FDR 인라인 HI-A + LSTM-A window-minmax + LSTM-C raw)\n")
+        f.write(f"LGBM   (HI-A flat):              {overall['lgbm']:.4f}\n")
+        f.write(f"LSTM-A (window-minmax HI):        {overall['lstm_a']:.4f}\n")
+        f.write(f"LSTM-C (raw 8feat piecewise RUL): {overall['lstm_c']:.4f}\n")
+        f.write(f"Ensemble (3 models):              {np.mean(ens_scores):.4f}\n")
+        f.write(f"Best calibration factor:          {best_cf:.2f}\n")
+        f.write(f"\nFold 상세:\n")
+        for test_bid in BEARINGS:
+            i = test_bid - 1
+            f.write(f"  B{test_bid}: LGBM={model_fold_scores['lgbm'][i]:.4f}  "
+                    f"LSTM-A={model_fold_scores['lstm_a'][i]:.4f}  "
+                    f"LSTM-C={model_fold_scores['lstm_c'][i]:.4f}  "
+                    f"Ensemble={ens_scores[i]:.4f}\n")
 
     # 시각화
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle("Ensemble LOOCV – Predicted vs True RUL (LGBM + LSTM-C)", fontsize=13)
+    fig.suptitle("Ensemble v2 LOOCV — LGBM + LSTM-A (window-minmax) + LSTM-C", fontsize=12)
     axes = axes.flatten()
     for i, test_bid in enumerate(BEARINGS):
         ax = axes[i]
         obs_pts = results[test_bid]["obs_pts"]
         N_test  = results[test_bid]["N"]
         true_rul = [N_test - obs for obs in obs_pts]
-        ax.plot(obs_pts, true_rul, "k-", lw=1.5, label="True RUL")
-        ax.plot(obs_pts, results[test_bid]["lgbm"],     "r--", lw=1, alpha=0.7, label="LGBM")
-        ax.plot(obs_pts, results[test_bid]["lstm_c"],   "c--", lw=1, alpha=0.7, label="LSTM-C")
-        ax.plot(obs_pts, results[test_bid]["ensemble"], "m-",  lw=2, label="Ensemble")
-        ax.set_title(f"Bearing {test_bid}")
+        ax.plot(obs_pts, true_rul,                     "k-",  lw=1.5, label="True RUL")
+        ax.plot(obs_pts, results[test_bid]["lgbm"],    "r--", lw=1,   alpha=0.7, label="LGBM")
+        ax.plot(obs_pts, results[test_bid]["lstm_a"],  "g--", lw=1,   alpha=0.7, label="LSTM-A")
+        ax.plot(obs_pts, results[test_bid]["lstm_c"],  "c--", lw=1,   alpha=0.7, label="LSTM-C")
+        ax.plot(obs_pts, results[test_bid]["ensemble"],"m-",  lw=2,   label="Ensemble")
+        ax.set_title(f"Bearing {test_bid}  (LSTM-A: {model_fold_scores['lstm_a'][i]:.3f})")
         ax.set_xlabel("Obs Cycle"); ax.set_ylabel("RUL (cycles)")
         ax.legend(fontsize=7); ax.grid(True, alpha=0.4)
     plt.tight_layout()
-    plt.savefig(OUT_DIR / "ensemble_loocv_predictions.png", dpi=150)
+    plt.savefig(OUT_DIR / "ensemble_v2_loocv_predictions.png", dpi=150)
     plt.close()
 
     return overall, best_cf, fold_weights
@@ -598,34 +728,35 @@ def run_test_inference(best_cf: float, fold_weights: dict):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Train HI-A: 전체 4개 기준 인라인 계산
-    print("  Train HI-A v4 계산 (전체 4개 베어링 기준)...")
-    dfs = load_train_features()
-    hi_a = compute_fold_hi_a(dfs, exclude_bid=0)  # exclude_bid=0 → 전체 포함
-
-    # Test HI-A: 사전 계산 파일 사용
-    hi_a_test_exists = all((HI_A_TEST / f"Test{t}_best.csv").exists() for t in TEST_IDS)
-    if not hi_a_test_exists:
+    if not all((HI_A_TEST / f"Test{t}_best.csv").exists() for t in TEST_IDS):
         print("[경고] HI-A Test 파일 없음. hi_test_v4.py를 먼저 실행하세요.")
         return
 
-    # 전체 모델 학습
-    print("  LGBM...")
+    print("  Train HI-A v4 계산 (전체 4개 베어링 기준)...")
+    dfs = load_train_features()
+    hi_a = compute_fold_hi_a(dfs, exclude_bid=0)
+
+    print("  LGBM 학습...")
     lgbm_model = train_lgbm(hi_a, BEARINGS)
-    print("  LSTM-C (raw features, 5 seeds)...")
+
+    print("  LSTM-A 학습 (window-minmax HI, 5 seeds)...")
+    lstm_a_models, lstm_a_scale = build_lstm_a_for_test(hi_a, device)
+
+    print("  LSTM-C 학습 (raw features, 5 seeds)...")
     lstm_c_models, lstm_c_scaler, lstm_c_scale = build_lstm_c_for_test(dfs, device)
 
-    # LOOCV fold 가중치 평균 (2 모델)
-    w_lgbm = float(np.mean([fold_weights[b]["lgbm"]  for b in BEARINGS]))
-    w_c    = float(np.mean([fold_weights[b]["lstm_c"] for b in BEARINGS]))
-    total  = w_lgbm + w_c
-    w_lgbm, w_c = w_lgbm / total, w_c / total
-    print(f"\n  Test 가중치: LGBM={w_lgbm:.3f}, LSTM-C={w_c:.3f}")
+    # LOOCV fold 평균 가중치
+    w_lgbm = float(np.mean([fold_weights[b]["lgbm"]   for b in BEARINGS]))
+    w_a    = float(np.mean([fold_weights[b]["lstm_a"]  for b in BEARINGS]))
+    w_c    = float(np.mean([fold_weights[b]["lstm_c"]  for b in BEARINGS]))
+    total  = w_lgbm + w_a + w_c
+    w_lgbm, w_a, w_c = w_lgbm / total, w_a / total, w_c / total
+    print(f"\n  Test 가중치: LGBM={w_lgbm:.3f}, LSTM-A={w_a:.3f}, LSTM-C={w_c:.3f}")
     print(f"  Calibration factor: {best_cf:.2f}")
 
     summary_rows = []
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    fig.suptitle("Ensemble RUL – Test Bearings (LGBM + LSTM-C)", fontsize=13)
+    fig.suptitle("Ensemble v2 RUL — Test (LGBM + LSTM-A + LSTM-C)", fontsize=12)
     axes = axes.flatten()
 
     for i, tid in enumerate(TEST_IDS):
@@ -634,13 +765,13 @@ def run_test_inference(best_cf: float, fold_weights: dict):
         obs_pts = np.arange(SEQ_LENGTH, N)
 
         preds_lgbm = predict_lgbm(lgbm_model, hi_a_t)
-
-        # LSTM-C: 테스트 raw 피처 로드 후 예측 (사전 학습된 모델 재사용)
+        preds_a    = predict_lstm_a_from_models(lstm_a_models, lstm_a_scale,
+                                                hi_a_t, start_obs=0, device=device)
         test_raw_feat = pd.read_csv(TEST_FEAT_DIR / f"Test{tid}_features.csv")[INPUT_COLS_C].values
-        preds_c = predict_lstm_c_from_models(lstm_c_models, lstm_c_scaler,
-                                              lstm_c_scale, test_raw_feat, device)
+        preds_c    = predict_lstm_c_from_models(lstm_c_models, lstm_c_scaler,
+                                                lstm_c_scale, test_raw_feat, device)
 
-        preds_ens = (w_lgbm * preds_lgbm + w_c * preds_c) * best_cf
+        preds_ens = (w_lgbm * preds_lgbm + w_a * preds_a + w_c * preds_c) * best_cf
 
         final_rul_cyc = float(preds_ens[-1])
         final_rul_hr  = final_rul_cyc * INTERVAL_SEC / 3600
@@ -650,11 +781,12 @@ def run_test_inference(best_cf: float, fold_weights: dict):
         df_out = pd.DataFrame({
             "obs_cycle":         obs_pts,
             "rul_pred_lgbm":     preds_lgbm,
+            "rul_pred_lstm_a":   preds_a,
             "rul_pred_lstm_c":   preds_c,
             "rul_pred_ensemble": preds_ens,
             "rul_pred_hours":    preds_ens * INTERVAL_SEC / 3600,
         })
-        df_out.to_csv(OUT_DIR / f"Test{tid}_ensemble_RUL.csv", index=False)
+        df_out.to_csv(OUT_DIR / f"Test{tid}_ensemble_v2_RUL.csv", index=False)
 
         summary_rows.append({
             "test_id":          tid,
@@ -663,25 +795,27 @@ def run_test_inference(best_cf: float, fold_weights: dict):
             "final_rul_cycles": round(final_rul_cyc, 2),
             "final_rul_hours":  round(final_rul_hr,  2),
             "w_lgbm":           round(w_lgbm, 3),
+            "w_lstm_a":         round(w_a, 3),
             "w_lstm_c":         round(w_c, 3),
             "calib_factor":     round(best_cf, 2),
         })
 
         ax = axes[i]
-        ax.plot(obs_pts, preds_lgbm, "r--", lw=1, alpha=0.6, label="LGBM")
-        ax.plot(obs_pts, preds_c,    "c--", lw=1, alpha=0.6, label="LSTM-C")
-        ax.plot(obs_pts, preds_ens,  "m-",  lw=2, label="Ensemble")
+        ax.plot(obs_pts, preds_lgbm, "r--", lw=1,  alpha=0.6, label="LGBM")
+        ax.plot(obs_pts, preds_a,    "g--", lw=1,  alpha=0.6, label="LSTM-A")
+        ax.plot(obs_pts, preds_c,    "c--", lw=1,  alpha=0.6, label="LSTM-C")
+        ax.plot(obs_pts, preds_ens,  "m-",  lw=2,  label="Ensemble")
         ax.axvline(N, color="gray", ls="--", lw=1)
         ax.set_title(f"Test{tid}  Final={final_rul_hr:.1f}hr")
         ax.set_xlabel("Obs Cycle"); ax.set_ylabel("RUL (cycles)")
         ax.legend(fontsize=7); ax.grid(True, alpha=0.4)
 
     plt.tight_layout()
-    plt.savefig(OUT_DIR / "ensemble_test_predictions.png", dpi=150)
+    plt.savefig(OUT_DIR / "ensemble_v2_test_predictions.png", dpi=150)
     plt.close()
 
     df_summary = pd.DataFrame(summary_rows)
-    df_summary.to_csv(OUT_DIR / "Test_ensemble_summary.csv", index=False)
+    df_summary.to_csv(OUT_DIR / "Test_ensemble_v2_summary.csv", index=False)
     print(f"\n  최종 요약:")
     print(df_summary.to_string(index=False))
     print(f"\n[완료] {OUT_DIR}")

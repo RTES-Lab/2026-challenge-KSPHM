@@ -1,0 +1,7 @@
+test_id,config,final_rul_cycles,final_rul_hours,calib_factor
+1,LGBM+LSTM-A,30.31,5.05,0.76
+2,LGBM+LSTM-A,30.47,5.08,0.76
+3,LGBM+LSTM-A,28.15,4.69,0.76
+4,LGBM+LSTM-A,20.56,3.43,0.76
+5,LGBM+LSTM-A,44.75,7.46,0.76
+6,LGBM+LSTM-A,32.38,5.4,0.76

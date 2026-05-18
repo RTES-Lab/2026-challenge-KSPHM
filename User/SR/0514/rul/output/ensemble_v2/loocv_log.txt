@@ -1,0 +1,12 @@
+LOOCV 결과 (v4 FDR 인라인 HI-A + LSTM-A window-minmax + LSTM-C raw)
+LGBM   (HI-A flat):              0.2920
+LSTM-A (window-minmax HI):        0.4287
+LSTM-C (raw 8feat piecewise RUL): 0.3715
+Ensemble (3 models):              0.4267
+Best calibration factor:          1.00
+
+Fold 상세:
+  B1: LGBM=0.4164  LSTM-A=0.4004  LSTM-C=0.3732  Ensemble=0.3551
+  B2: LGBM=0.3315  LSTM-A=0.4933  LSTM-C=0.3859  Ensemble=0.5589
+  B3: LGBM=0.0617  LSTM-A=0.4637  LSTM-C=0.4410  Ensemble=0.4508
+  B4: LGBM=0.3584  LSTM-A=0.3574  LSTM-C=0.2860  Ensemble=0.3420
