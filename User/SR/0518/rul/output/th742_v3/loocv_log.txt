@@ -1,0 +1,20 @@
+SR/0518 v3 — TH v7_4_2 HI + LGBM(window-norm+obs_frac) + LSTM-A
+LGBM avg:    0.4102  (v2: 0.3345)
+LSTM-A avg:  0.4261  (v2: 0.4261)
+Ensemble:    0.5004  (v2: 0.4551)
+After cf:    LSTM-A cf=0.88→0.4266  Ens cf=1.06→0.5052
+
+Fold detail:
+  B1: LGBM=0.6071  LSTM-A=0.3960  Ens=0.5246  w=[LGBM=0.605, LSTM=0.395]
+  B2: LGBM=0.5618  LSTM-A=0.4877  Ens=0.6405  w=[LGBM=0.535, LSTM=0.465]
+  B3: LGBM=0.0705  LSTM-A=0.4636  Ens=0.4666  w=[LGBM=0.132, LSTM=0.868]
+  B4: LGBM=0.4015  LSTM-A=0.3572  Ens=0.3696  w=[LGBM=0.529, LSTM=0.471]
+
+Test inference:
+ test_id  hi_start  hi_end  rul_hours  v2_hours  v1_hours  base0514
+       1     0.023   0.436       9.32      8.58      8.13      5.05
+       2     0.038   0.108      10.04     10.79     10.89      5.08
+       3     0.097   0.336       8.12      5.60      7.44      4.69
+       4     0.001   0.571      10.43      5.06      6.52      3.43
+       5     0.009   0.529       9.33      7.51      9.94      7.46
+       6     0.028   0.447       9.42      5.61      8.61      5.40

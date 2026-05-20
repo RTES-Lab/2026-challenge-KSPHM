@@ -38,22 +38,40 @@ v4_scores = list(hi_summary_test['q_score'])
 # ===============================================================
 # Figure 1: Summary Dashboard
 # ===============================================================
-fig = plt.figure(figsize=(20, 24))
+fig = plt.figure(figsize=(16, 18))
 fig.patch.set_facecolor('#F8F9FA')
-gs = gridspec.GridSpec(4, 3, figure=fig, hspace=0.45, wspace=0.35,
-                       left=0.07, right=0.97, top=0.95, bottom=0.04)
-fig.suptitle('0514 Experiment Results — Summary Dashboard  [HI v4: Train-Anchored]', fontsize=22, fontweight='bold', y=0.98)
+gs = gridspec.GridSpec(3, 2, figure=fig, hspace=0.45, wspace=0.35,
+                       left=0.07, right=0.97, top=0.95, bottom=0.04,
+                       height_ratios=[0.8, 1, 1])
+fig.suptitle('0514 Experiment Results — Summary Dashboard  [HI v4: Train-Anchored]', fontsize=18, fontweight='bold', y=0.98)
+
+obs_hours = 8.17
+
+# -- RUL bar chart (cycles), full width --
+ax_rul = fig.add_subplot(gs[0, :])
+rul_cyc = [rul_summary[rul_summary['test_id'] == t]['final_rul_cycles'].values[0] for t in range(1, 7)]
+rul_hrs = [rul_summary[rul_summary['test_id'] == t]['final_rul_hours'].values[0]  for t in range(1, 7)]
+y_pos   = np.arange(6, 0, -1)  # Test1 at top
+
+ax_rul.barh(y_pos, rul_cyc, height=0.55, color=TEST_COLORS, alpha=0.85, edgecolor='black', lw=0.5)
+for y, cyc, hrs in zip(y_pos, rul_cyc, rul_hrs):
+    ax_rul.text(cyc + 0.3, y, f'{cyc:.1f} cycles  ({hrs:.2f} hr)',
+                va='center', fontsize=10, fontweight='bold')
+ax_rul.set_yticks(y_pos)
+ax_rul.set_yticklabels([f'Test{t}' for t in range(1, 7)], fontsize=11)
+ax_rul.set_xlabel('Predicted RUL (cycles)', fontsize=10)
+ax_rul.set_title('Predicted RUL per Test Bearing', fontsize=12, fontweight='bold')
+ax_rul.set_xlim(0, max(rul_cyc) * 1.2)
 
 # -- Train HI curves (Bearing 1-4) --
 loocv_scores = {1: 0.695, 2: 0.521, 3: 0.619, 4: 0.551}
-train_axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]),
-              fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1])]
+train_axes = [fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1]),
+              fig.add_subplot(gs[2, 0]), fig.add_subplot(gs[2, 1])]
 
 for idx, (ax, b) in enumerate(zip(train_axes, range(1, 5))):
     hi = train_hi[b]
     x  = np.arange(len(hi))
     ax.plot(x, hi, color=TRAIN_COLORS[idx], lw=2, label=f'Bearing{b} HI')
-    ax.axhline(0.8, color='red', ls='--', lw=1, alpha=0.7, label='Threshold 0.8')
     ax.fill_between(x, hi, alpha=0.15, color=TRAIN_COLORS[idx])
     ax.set_title(f'Bearing{b}  |  Life={len(hi)-1} cycles  |  LOOCV={loocv_scores[b]:.3f}',
                  fontsize=11, fontweight='bold')
@@ -65,163 +83,6 @@ for idx, (ax, b) in enumerate(zip(train_axes, range(1, 5))):
     ax.annotate(f'HI={hi[-1]:.3f}', (len(hi)-1, hi[-1]),
                 textcoords='offset points', xytext=(-40, 8),
                 fontsize=8, color='red', fontweight='bold')
-
-# -- HI Q-Score: v1 vs v3 --
-ax_q   = fig.add_subplot(gs[0, 2])
-x_pos  = np.arange(6)
-width  = 0.35
-width = 0.25
-ax_q.bar(x_pos - width, v1_scores, width, label='v1 (K-Means+SignalTransform)',
-          color='#90A4AE', alpha=0.8, edgecolor='gray')
-ax_q.bar(x_pos,          v3_scores, width, label='v3 (FFT+FDR)',
-          color='#42A5F5', alpha=0.9, edgecolor='#1565C0')
-ax_q.bar(x_pos + width,  v4_scores, width, label='v4 (Train-Anchored)',
-          color='#66BB6A', alpha=0.9, edgecolor='#2E7D32')
-
-for i, (v3, v4, x) in enumerate(zip(v3_scores, v4_scores, x_pos)):
-    delta = v4 - v3
-    color = '#2E7D32' if delta > 0 else '#C62828'
-    sign  = '+' if delta >= 0 else ''
-    ax_q.text(x + width, max(v3, v4) + 0.02, f'{sign}{delta:.3f}',
-              ha='center', va='bottom', fontsize=7, color=color, fontweight='bold')
-
-ax_q.set_title('HI Q-Score: v1 / v3 / v4', fontsize=11, fontweight='bold')
-ax_q.set_xticks(x_pos)
-ax_q.set_xticklabels([f'Test{i}' for i in range(1, 7)], fontsize=9)
-ax_q.set_ylabel('Q-Score', fontsize=9)
-ax_q.set_ylim(0, 1.15)
-ax_q.legend(fontsize=7)
-ax_q.axhline(np.mean(v3_scores), color='#1565C0', ls=':', lw=1.5, alpha=0.8)
-ax_q.axhline(np.mean(v4_scores), color='#2E7D32', ls=':', lw=1.5, alpha=0.8)
-ax_q.text(5.5, np.mean(v3_scores) + 0.01, f'avg v3={np.mean(v3_scores):.3f}',
-           ha='right', fontsize=7, color='#1565C0')
-ax_q.text(5.5, np.mean(v4_scores) + 0.01, f'avg v4={np.mean(v4_scores):.3f}',
-           ha='right', fontsize=7, color='#2E7D32')
-
-# -- Train HI: Tred by Regime --
-ax_regime = fig.add_subplot(gs[1, 2])
-regime_map   = {'Regime1(Low)': '#1565C0', 'Regime2(High)': '#C62828'}
-regime_label = {'레짐1(저속)': 'Regime1(Low)', '레짐2(고속)': 'Regime2(High)'}
-regimes      = hi_summary_train['regime'].unique()
-bearings_lst = hi_summary_train['bearing'].unique()
-bar_width    = 0.2
-x_br         = np.arange(len(bearings_lst))
-
-for ri, regime in enumerate(regimes):
-    subset   = hi_summary_train[hi_summary_train['regime'] == regime]
-    tred_vals = subset['tred'].values
-    eng_label = regime_label.get(regime, regime)
-    ax_regime.bar(x_br + ri * bar_width, tred_vals, bar_width,
-                   label=eng_label, color=list(regime_map.values())[ri],
-                   alpha=0.8, edgecolor='black', lw=0.5)
-
-ax_regime.set_title('Train HI: Tred Score by Regime', fontsize=11, fontweight='bold')
-ax_regime.set_xticks(x_br + bar_width / 2)
-ax_regime.set_xticklabels([f'B{b}' for b in bearings_lst], fontsize=10)
-ax_regime.set_ylabel('Tred Score', fontsize=9)
-ax_regime.set_ylim(0.8, 1.02)
-ax_regime.legend(fontsize=8)
-
-# -- Test HI curves --
-ax_test_hi = fig.add_subplot(gs[2, :2])
-for i in range(1, 7):
-    hi = test_hi[i]
-    q  = hi_summary_test[hi_summary_test['test_id'] == i]['q_score'].values[0]
-    q  = hi_summary_test[hi_summary_test['test_id'] == i]['q_score'].values[0]
-    ax_test_hi.plot(np.arange(len(hi)), hi, color=TEST_COLORS[i-1], lw=2.0,
-                    label=f'Test{i} (Q={q:.3f}, start={hi[0]:.3f})')
-
-ax_test_hi.axhline(0.8, color='red', ls='--', lw=1.2, alpha=0.6, label='Threshold 0.8')
-ax_test_hi.set_title('Test HI Curves v4 — Absolute Level (all 6 bearings)', fontsize=12, fontweight='bold')
-ax_test_hi.set_xlabel('Slot Index (0-49)', fontsize=10)
-ax_test_hi.set_ylabel('Health Index (absolute)', fontsize=10)
-ax_test_hi.set_ylim(-0.05, 1.1)
-ax_test_hi.legend(fontsize=9, loc='upper left', ncol=2)
-ax_test_hi.annotate('Test5/6: start HI elevated\n(SP: late degradation)',
-                     xy=(0, test_hi[5][0]), xytext=(8, 0.65),
-                     arrowprops=dict(arrowstyle='->', color='#607D8B', lw=1.5),
-                     fontsize=9, color='#607D8B', fontweight='bold')
-ax_test_hi.annotate('Test2: flat HI\n(no degradation trend)',
-                     xy=(25, test_hi[2][25]), xytext=(28, 0.30),
-                     arrowprops=dict(arrowstyle='->', color='#9C27B0', lw=1.5),
-                     fontsize=9, color='#9C27B0', fontweight='bold')
-
-# -- LOOCV score history --
-ax_loocv = fig.add_subplot(gs[2, 2])
-loocv_history = [
-    {'run': 'Run1\n(MSE)',      'b1': 0.4359, 'b2': 0.4353, 'b3': 0.3612, 'b4': 0.5567, 'total': 0.4579},
-    {'run': 'Run2\n(Asym)',     'b1': 0.7146, 'b2': 0.5777, 'b3': 0.5993, 'b4': 0.4297, 'total': 0.5749},
-    {'run': 'Run3',             'b1': 0.4360, 'b2': 0.5385, 'b3': 0.5366, 'b4': 0.4304, 'total': 0.4780},
-    {'run': 'Run4',             'b1': 0.4361, 'b2': 0.4389, 'b3': 0.7145, 'b4': 0.4311, 'total': 0.4869},
-    {'run': 'Run5',             'b1': 0.2500, 'b2': 0.2500, 'b3': 0.7160, 'b4': 0.5675, 'total': 0.4311},
-    {'run': 'Run6\n(LOO+Norm)', 'b1': 0.6950, 'b2': 0.5210, 'b3': 0.6190, 'b4': 0.5512, 'total': 0.5956},
-]
-lh_df  = pd.DataFrame(loocv_history)
-x_run  = np.arange(len(lh_df))
-
-for i, (b, c) in enumerate(zip(['b1', 'b2', 'b3', 'b4'], TRAIN_COLORS)):
-    ax_loocv.plot(x_run, lh_df[b], marker='o', color=c, lw=1.5,
-                   alpha=0.7, label=f'Bearing{i+1}', markersize=5)
-ax_loocv.plot(x_run, lh_df['total'], marker='D', color='black', lw=2.5,
-               label='Overall avg', markersize=7, zorder=5)
-
-best_idx = lh_df['total'].idxmax()
-ax_loocv.scatter([best_idx], [lh_df['total'].iloc[best_idx]], s=120, color='gold',
-                  zorder=6, edgecolors='black', lw=1.5)
-ax_loocv.annotate(f'Best\n{lh_df["total"].iloc[best_idx]:.4f}',
-                   (best_idx, lh_df['total'].iloc[best_idx]),
-                   xytext=(best_idx - 1.2, lh_df['total'].iloc[best_idx] + 0.05),
-                   fontsize=9, color='black', fontweight='bold',
-                   arrowprops=dict(arrowstyle='->', color='black', lw=1.2))
-
-ax_loocv.set_title('LOOCV RUL Score History', fontsize=11, fontweight='bold')
-ax_loocv.set_xticks(x_run)
-ax_loocv.set_xticklabels(lh_df['run'], fontsize=8)
-ax_loocv.set_ylabel('Score', fontsize=9)
-ax_loocv.set_ylim(0.15, 0.85)
-ax_loocv.legend(fontsize=8, loc='upper left')
-
-# -- RUL prediction timeline --
-ax_rul_tl = fig.add_subplot(gs[3, :])
-obs_hours  = 8.17
-
-for i, row in rul_summary.iterrows():
-    tid      = int(row['test_id'])
-    y        = tid
-    rul_hrs  = row['final_rul_hours']
-    pred_fail = row['pred_failure_hours']
-    q        = hi_summary_test[hi_summary_test['test_id'] == tid]['q_score'].values[0]
-    hi_end   = test_hi[tid][-1]
-
-    ax_rul_tl.barh(y, obs_hours, height=0.5, left=0,
-                    color=TEST_COLORS[i], alpha=0.6)
-    ax_rul_tl.barh(y, rul_hrs, height=0.5, left=obs_hours,
-                    color=TEST_COLORS[i], alpha=0.25, hatch='//')
-    ax_rul_tl.axvline(pred_fail, color=TEST_COLORS[i], ls=':', lw=1, alpha=0.7)
-
-    txt_color = 'white' if hi_end > 0.5 else 'black'
-    ax_rul_tl.text(obs_hours / 2, y + 0.28,
-                    f'Test{tid}  |  HI_end={hi_end:.3f}  |  RUL={row["final_rul_cycles"]:.1f}cyc ({rul_hrs:.2f}hr)  |  Q={q:.3f}',
-                    ha='center', va='bottom', fontsize=8.5, fontweight='bold', color=txt_color)
-    ax_rul_tl.text(obs_hours / 2, y - 0.28, 'Observed (8.17 hr)',
-                    ha='center', va='top', fontsize=7.5, color=txt_color)
-    if rul_hrs > 0.3:
-        ax_rul_tl.text(obs_hours + rul_hrs / 2, y, f'+{rul_hrs:.2f}hr',
-                        ha='center', va='center', fontsize=8)
-
-ax_rul_tl.axvline(obs_hours, color='black', ls='--', lw=2)
-ax_rul_tl.set_xlabel('Time (hours)', fontsize=11)
-ax_rul_tl.set_title('Test RUL Prediction Timeline (observed + predicted remaining life)', fontsize=12, fontweight='bold')
-ax_rul_tl.set_yticks(range(1, 7))
-ax_rul_tl.set_yticklabels([f'Test{i}' for i in range(1, 7)], fontsize=10)
-ax_rul_tl.set_xlim(0, 22)
-
-from matplotlib.patches import Patch
-ax_rul_tl.legend(handles=[
-    Patch(facecolor='gray', alpha=0.6, label='Observed window (8.17 hr)'),
-    Patch(facecolor='gray', alpha=0.25, hatch='//', label='Predicted RUL'),
-    plt.Line2D([0], [0], color='black', ls='--', lw=2, label='Current time'),
-], loc='upper right', fontsize=9)
 
 plt.savefig(f'{BASE}/analysis_summary.png', dpi=150, bbox_inches='tight', facecolor='#F8F9FA')
 print(f'Saved: {BASE}/analysis_summary.png')

@@ -1,0 +1,20 @@
+SR/0518 v2 — TH v7_4_2 HI + LGBM(window-norm) + LSTM-A
+LGBM avg:    0.3345  (v1: 0.3625)
+LSTM-A avg:  0.4261  (v1: 0.4261)
+Ensemble:    0.4551  (v1: 0.4529)
+After cf:    LSTM-A cf=0.88→0.4266  Ensemble cf=1.04→0.4574
+
+Fold detail:
+  B1: LGBM=0.3718  LSTM-A=0.3960  Ens=0.4025  w=[LGBM=0.484, LSTM=0.516]
+  B2: LGBM=0.4729  LSTM-A=0.4877  Ens=0.5664  w=[LGBM=0.492, LSTM=0.508]
+  B3: LGBM=0.0916  LSTM-A=0.4636  Ens=0.4797  w=[LGBM=0.165, LSTM=0.835]
+  B4: LGBM=0.4017  LSTM-A=0.3572  Ens=0.3718  w=[LGBM=0.529, LSTM=0.471]
+
+Test inference:
+ test_id  hi_start  hi_end  rul_cycles  rul_hours  v1_hours  base0514
+       1     0.023   0.436       51.51       8.58      8.13      5.05
+       2     0.038   0.108       64.73      10.79     10.89      5.08
+       3     0.097   0.336       33.60       5.60      7.44      4.69
+       4     0.001   0.571       30.34       5.06      6.52      3.43
+       5     0.009   0.529       45.05       7.51      9.94      7.46
+       6     0.028   0.447       33.69       5.61      8.61      5.40

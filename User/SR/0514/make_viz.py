@@ -355,27 +355,51 @@ axes_c[1, 1].set_ylabel("Health Index [0, 1]")
 axes_c[1, 1].legend(fontsize=9)
 
 ax_bias = axes_c[1, 2]
-t2 = np.arange(50)
-hi_already_deg = 0.4 + 0.01 * t2 + 0.03 * np.random.randn(50)
-hi_already_deg += 0.3 * np.random.randn(50) * 0.1
-hi_normal = 0.05 + 0.015 * t2 + 0.03 * np.random.randn(50)
-mu_self_deg = hi_already_deg[:5].mean()
-mu_train_ext = hi_normal[:5].mean()
+t2 = np.arange(60)
+np.random.seed(42)
+# Already-degraded bearing: starts at 0.40, slowly rises
+raw_deg = 0.40 + 0.006 * t2 + 0.010 * np.random.randn(60)
 
-ax_bias.plot(t2, hi_already_deg, "r-", lw=2, label="Already-degraded Test (Test2/6)")
-ax_bias.plot(t2, hi_normal, "g-", lw=2, label="Healthy-start Test (Test3/4/5)")
-ax_bias.axhline(mu_self_deg, color="red", ls="--", lw=2,
-                label=f"Self baseline (contaminated): mu={mu_self_deg:.2f}")
-ax_bias.axhline(mu_train_ext, color="green", ls="-.", lw=2,
-                label=f"Train external baseline (healthy): mu={mu_train_ext:.2f}")
-ax_bias.text(0.5, 0.85, "Using self baseline for Test2/6:\ndegraded state mistaken as 'healthy'!\n-> Fixed by using Train external baseline",
-             transform=ax_bias.transAxes, ha="center",
-             fontsize=9, color="darkred", fontweight="bold",
-             bbox=dict(boxstyle="round", fc="#FFEBEE", alpha=0.9))
-ax_bias.set_title("(6) Test Baseline Contamination\n(Bug Fix 3: use Train external baseline)",
+mu_self  = raw_deg[:6].mean()   # ~0.40: contaminated baseline
+mu_train = 0.10                  # healthy Train baseline
+
+# HI = relative deviation from baseline (ratio)
+hi_contam  = (raw_deg - mu_self)  / (mu_self  + 1e-9)  # starts ~0
+hi_correct = (raw_deg - mu_train) / (mu_train + 1e-9)  # starts ~3.0
+
+threshold = 0.5  # 50% deviation from baseline → degraded
+
+cross_contam  = np.where(hi_contam  > threshold)[0]
+cross_correct = np.where(hi_correct > threshold)[0]
+t_contam  = int(cross_contam[0])  if len(cross_contam)  else None
+t_correct = int(cross_correct[0]) if len(cross_correct) else None
+
+ax_bias.plot(t2, hi_contam,  "r--", lw=2.5,
+             label=f"Self baseline (contaminated, mu={mu_self:.2f})")
+ax_bias.plot(t2, hi_correct, "g-",  lw=2.5,
+             label=f"Train baseline (correct, mu={mu_train:.2f})")
+ax_bias.axhline(threshold, color="orange", ls=":", lw=2.5,
+                label=f"Alarm threshold ({threshold})")
+ax_bias.fill_betweenx([0, threshold], 0, t_contam or 60,
+                      alpha=0.12, color="red", label="Missed degradation window")
+
+if t_correct == 0:
+    ax_bias.annotate("Correct: alarm at t=0\n(already degraded from start!)",
+                     xy=(1, threshold + 0.1), xytext=(10, 1.2),
+                     fontsize=9, color="green", fontweight="bold",
+                     arrowprops=dict(arrowstyle="->", color="green"))
+if t_contam is not None:
+    ax_bias.axvline(t_contam, color="red", ls="--", lw=1.5, alpha=0.8)
+    ax_bias.annotate(f"Contaminated: alarm at t={t_contam}\n(missed first {t_contam} steps!)",
+                     xy=(t_contam, threshold), xytext=(t_contam - 22, 2.8),
+                     fontsize=9, color="red", fontweight="bold",
+                     arrowprops=dict(arrowstyle="->", color="red"))
+
+ax_bias.set_title("(6) Baseline Contamination — Alarm Timing\n(same bearing, different baseline → different alarm time)",
                   fontsize=11, fontweight="bold")
-ax_bias.set_ylabel("Feature value (simulated)")
-ax_bias.legend(fontsize=8, loc="lower right")
+ax_bias.set_ylabel("HI (relative deviation from baseline)")
+ax_bias.set_ylim(-0.5, 7)
+ax_bias.legend(fontsize=8, loc="upper left")
 
 for ax in axes_c.flatten():
     ax.set_xlabel("Time slot")
@@ -407,7 +431,6 @@ for idx, bid in enumerate([1, 2, 3, 4]):
     ax.plot(t, hi_b, color=colors_a[idx], lw=1.5, ls="--", alpha=0.7,
              label="HI-B (time: kurtosis/crest/rms/p2p)")
     ax.fill_between(t, hi_a, hi_b, alpha=0.1, color=colors_a[idx])
-    ax.axhline(0.8, color="red", ls=":", lw=1.5, alpha=0.7, label="Threshold 0.8")
     ax.set_title(f"Bearing {bid}  (life={len(hi_a)-1} cycles)", fontsize=12, fontweight="bold")
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Health Index")
@@ -425,33 +448,60 @@ print("Saved: viz_hi_ab_comparison.png")
 # ──────────────────────────────────────────────────────────
 # Fig E: Ensemble model LOOCV results
 # ──────────────────────────────────────────────────────────
-fig_e, axes_e = plt.subplots(1, 2, figsize=(16, 7))
-fig_e.suptitle("3-Model Ensemble LOOCV Results", fontsize=14, fontweight="bold")
+fig_e, axes_e = plt.subplots(1, 2, figsize=(18, 8))
+fig_e.suptitle(
+    "3-Model Ensemble LOOCV Results\n"
+    "Left: final scores (5-seed median, 4-fold LOOCV) │ "
+    "Right: LSTM-A development history (single seed, same 4-fold LOOCV)",
+    fontsize=12, fontweight="bold"
+)
 fig_e.patch.set_facecolor("#F8F9FA")
 
+# ── Left panel: per-model comparison ─────────────────────────────────
 ax_fold = axes_e[0]
-model_names = ["LSTM-A\n(HI-A)", "LSTM-B\n(HI-B)", "LGBM\n(HI-A flat)", "Ensemble\n(weighted)"]
+
+# Detailed x-axis labels explaining each model
+model_names = [
+    "LSTM-A\n(HI-A: freq-domain)\n5-seed median",
+    "LSTM-B\n(HI-B: time-domain)\n5-seed median",
+    "LGBM\n(HI-A flat)\nsingle model",
+    "Ensemble\n(weighted)\nLSTM-A+B+LGBM",
+]
 scores_per_model = [0.6068, 0.4867, 0.4800, 0.5937]
 colors_m = ["#1565C0", "#880E4F", "#2E7D32", "#E65100"]
 
 bars = ax_fold.bar(np.arange(4), scores_per_model, color=colors_m, alpha=0.85,
                     edgecolor="black", lw=0.8)
-for i, (bar, sc) in enumerate(zip(bars, scores_per_model)):
+for bar, sc in zip(bars, scores_per_model):
     ax_fold.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
-                  f"{sc:.4f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
+                  f"{sc:.4f}", ha="center", va="bottom", fontsize=12, fontweight="bold")
 
 ax_fold.set_xticks(np.arange(4))
-ax_fold.set_xticklabels(model_names, fontsize=10)
-ax_fold.set_ylabel("LOOCV Score (avg)", fontsize=11)
-ax_fold.set_ylim(0, 0.8)
-ax_fold.set_title("Per-Model LOOCV Average Score\n(higher is better)", fontsize=12, fontweight="bold")
-ax_fold.axhline(0.6068, color="#1565C0", ls="--", lw=1.5, alpha=0.5, label="LSTM-A baseline")
+ax_fold.set_xticklabels(model_names, fontsize=9)
+ax_fold.set_ylabel("LOOCV Score (4-fold avg, 5-seed median)", fontsize=10)
+ax_fold.set_ylim(0, 0.85)
+ax_fold.set_title("Per-Model LOOCV Score (higher is better)\n[5-seed median — differs from right panel single-seed scores]",
+                   fontsize=11, fontweight="bold")
+ax_fold.axhline(0.6068, color="#1565C0", ls="--", lw=1.5, alpha=0.6,
+                label="LSTM-A 5-seed median = 0.6068")
 ax_fold.legend(fontsize=9)
-ax_fold.annotate("Best\nSingle Model", xy=(0, 0.6068),
-                  xytext=(0.5, 0.68),
+ax_fold.annotate("Best\nSingle Model\n(5-seed median)", xy=(0, 0.6068),
+                  xytext=(0.6, 0.70),
                   fontsize=9, color="#1565C0", fontweight="bold",
                   arrowprops=dict(arrowstyle="->", color="#1565C0"))
 
+# Model legend box inside the plot
+legend_text = (
+    "HI-A (freq): highfreq/energy/variation → FDR weighted sum → LSTM-A\n"
+    "HI-B (time): kurtosis/crest/rms/p2p → FDR weighted sum → LSTM-B\n"
+    "LGBM: HI-A as flat input (no sequence) → tree ensemble\n"
+    "Ensemble: LOOCV score-based weighted avg (LSTM-A highest weight)"
+)
+ax_fold.text(0.01, 0.99, legend_text, transform=ax_fold.transAxes,
+              fontsize=8, va="top", ha="left", linespacing=1.5,
+              bbox=dict(boxstyle="round", fc="#EEF2FF", ec="#1565C0", alpha=0.9))
+
+# ── Right panel: LSTM-A development history ──────────────────────────
 ax_hist = axes_e[1]
 run_labels = ["Run1\nMSE Loss", "Run2\nAsym Loss\n(initial)", "Run3~5\nexploration",
               "Run6\nAsym+LOO\n+RUL norm\n(final)"]
@@ -462,24 +512,41 @@ bars2 = ax_hist.bar(np.arange(4), run_scores, color=run_colors, alpha=0.9,
                      edgecolor="black", lw=0.8, width=0.6)
 for bar, sc in zip(bars2, run_scores):
     ax_hist.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
-                  f"{sc:.4f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
+                  f"{sc:.4f}", ha="center", va="bottom", fontsize=12, fontweight="bold")
 
 ax_hist.set_xticks(np.arange(4))
 ax_hist.set_xticklabels(run_labels, fontsize=9)
-ax_hist.set_ylabel("LOOCV Score (overall avg)", fontsize=11)
-ax_hist.set_ylim(0, 0.75)
-ax_hist.set_title("LSTM Single-Model LOOCV Score History\n(single seed, 4-fold LOOCV)",
-                   fontsize=12, fontweight="bold")
-ax_hist.axhline(0.4579, color="gray", ls=":", lw=1.5, label="Initial MSE: 0.4579")
-ax_hist.axhline(0.5956, color="#1565C0", ls="--", lw=2, label="Final Asym+LOO: 0.5956")
+ax_hist.set_ylabel("LOOCV Score (4-fold avg)", fontsize=10)
+ax_hist.set_ylim(0, 0.80)
+ax_hist.set_title(
+    "LSTM-A Development History (single seed, 4-fold LOOCV)\n"
+    "Note: single-seed final=0.5956 → 5-seed median=0.6068 (left panel)",
+    fontsize=11, fontweight="bold"
+)
+
+# Reference lines
+ax_hist.axhline(0.4579, color="gray", ls=":", lw=1.5, label="Initial (MSE loss, single seed): 0.4579")
+ax_hist.axhline(0.5956, color="#42A5F5", ls="--", lw=2, label="Final (Asym+LOO, single seed): 0.5956")
+ax_hist.axhline(0.6068, color="#1565C0", ls="-", lw=2, alpha=0.7,
+                label="5-seed median final: 0.6068 (left panel)")
 
 delta = 0.5956 - 0.4579
 ax_hist.annotate("", xy=(3, 0.5956), xytext=(0, 0.4579),
                   arrowprops=dict(arrowstyle="-|>", color="#1B5E20", lw=2.5))
-ax_hist.text(2, 0.535, f"+{delta:.4f}\n(+{delta/0.4579*100:.1f}%)",
-              ha="center", fontsize=11, color="#1B5E20", fontweight="bold",
+ax_hist.text(2, 0.535, f"+{delta:.4f}\n(+{delta/0.4579*100:.1f}%)\n(single seed)",
+              ha="center", fontsize=10, color="#1B5E20", fontweight="bold",
               bbox=dict(boxstyle="round", fc="#E8F5E9", alpha=0.85))
-ax_hist.legend(fontsize=9)
+
+# Annotation explaining 5-seed gap
+ax_hist.annotate(
+    "5-seed median\n(0.6068)\n+0.0112 vs\nsingle seed",
+    xy=(3.45, 0.6068), xytext=(3.35, 0.70),
+    fontsize=8.5, color="#1565C0", fontweight="bold", ha="center",
+    arrowprops=dict(arrowstyle="->", color="#1565C0"),
+    bbox=dict(boxstyle="round", fc="#E3F2FD", alpha=0.85)
+)
+
+ax_hist.legend(fontsize=8.5, loc="upper left")
 
 plt.tight_layout()
 plt.savefig(f"{BASE}/viz_ensemble_loocv.png", dpi=150, bbox_inches="tight",

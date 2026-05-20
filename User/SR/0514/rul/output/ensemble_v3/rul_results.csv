@@ -1,0 +1,5 @@
+dataset,test_bearing,rul_true,rul_pred,score
+Train,1,0,0,0.3738
+Train,2,0,0,0.5337
+Train,3,0,0,0.4430
+Train,4,0,0,0.3578

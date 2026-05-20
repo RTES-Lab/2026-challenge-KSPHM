@@ -1,0 +1,25 @@
+SR/0518 — TH v7_4_2 HI + SR LOOCV
+SR 0514 baseline LOOCV: 0.4326
+
+LGBM avg:   0.3625
+LSTM-A avg: 0.4261
+Ensemble avg: 0.4529
+
+After calibration:
+  LSTM-A: cf=0.88 → 0.4266
+  LGBM+LSTM-A: cf=1.06 → 0.4555
+
+Fold detail:
+  B1: LGBM=0.4345  LSTM-A=0.3960  Ens=0.3639  w=[LGBM=0.523, LSTM-A=0.477]
+  B2: LGBM=0.4313  LSTM-A=0.4877  Ens=0.5415  w=[LGBM=0.469, LSTM-A=0.531]
+  B3: LGBM=0.1344  LSTM-A=0.4636  Ens=0.5054  w=[LGBM=0.225, LSTM-A=0.775]
+  B4: LGBM=0.4498  LSTM-A=0.3572  Ens=0.4009  w=[LGBM=0.557, LSTM-A=0.443]
+
+Test inference:
+ test_id  hi_start  hi_end  final_rul_cycles  final_rul_hours  calib_factor
+       1     0.023   0.436             48.79             8.13          1.06
+       2     0.038   0.108             65.37            10.89          1.06
+       3     0.097   0.336             44.65             7.44          1.06
+       4     0.001   0.571             39.12             6.52          1.06
+       5     0.009   0.529             59.67             9.94          1.06
+       6     0.028   0.447             51.67             8.61          1.06
