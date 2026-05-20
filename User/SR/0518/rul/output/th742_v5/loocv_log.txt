@@ -1,0 +1,22 @@
+SR/0518 v5 — TH v7_4_2 HI + HI offset correction (Solution B)
+LOOCV identical to v4 (no HI correction for train bearings)
+
+LGBM avg:    0.4102  (v4: 0.4102)
+LSTM-A avg:  0.4261  (v4: 0.4261)
+Ensemble:    0.5004  (v4: 0.5004)
+cf search:  LSTM-A cf=0.88→0.4266  Ens cf=1.06→0.5052
+
+Fold detail:
+  B1: LGBM=0.6071  LSTM-A=0.3960  Ens=0.5246  w=[LGBM=0.605, LSTM=0.395]
+  B2: LGBM=0.5618  LSTM-A=0.4877  Ens=0.6405  w=[LGBM=0.535, LSTM=0.465]
+  B3: LGBM=0.0705  LSTM-A=0.4636  Ens=0.4666  w=[LGBM=0.132, LSTM=0.868]
+  B4: LGBM=0.4015  LSTM-A=0.3572  Ens=0.3696  w=[LGBM=0.529, LSTM=0.471]
+
+Test inference (HI offset correction):
+ test_id  hi_own_start  hi_own_end  hi_offset  hi_corr_start  hi_corr_end  start_obs  obs_frac0  rul_hours  v4_hours  base0514
+       1        0.0227      0.4362     0.0258         0.0484       0.4620         12      0.103       7.44      7.40      5.05
+       2        0.0379      0.1080     0.0412         0.0791       0.1492         14      0.120       8.58      8.58      5.08
+       3        0.0965      0.3356     0.1012         0.1977       0.4368         20      0.172       5.23      5.21      4.69
+       4        0.0006      0.5707     0.0008         0.0014       0.5715          3      0.026       9.78      9.78      3.43
+       5        0.0088      0.5289     0.0099         0.0187       0.5389          8      0.069       8.47      8.31      7.46
+       6        0.0279      0.4466     0.0307         0.0586       0.4773         12      0.103       6.79      6.79      5.40

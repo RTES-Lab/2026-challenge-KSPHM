@@ -1,0 +1,21 @@
+SR/0518 v6 — TH v7_4_2 HI + Solution A (Train-baseline for test)
+LOOCV uses own-baseline HI from TH (same as v4)
+
+LGBM avg:   0.4102
+LSTM-A avg: 0.4261
+Ensemble:   0.5004
+cf: LSTM-A cf=0.88→0.4266  Ens cf=1.06→0.5052
+
+  B1: LGBM=0.6071  LSTM-A=0.3960  Ens=0.5246
+  B2: LGBM=0.5618  LSTM-A=0.4877  Ens=0.6405
+  B3: LGBM=0.0705  LSTM-A=0.4636  Ens=0.4666
+  B4: LGBM=0.4015  LSTM-A=0.3572  Ens=0.3696
+
+Test inference (Train-baseline HI):
+ test_id  hi_own_start  hi_own_end  hi_corr_start  hi_corr_end  gate  rul_hours  v4_hours  base0514
+       1        0.0227      0.4362         0.0011       0.8386 0.849      10.18      7.40      5.05
+       2        0.0379      0.1080         0.8965       0.8965 0.897      10.23      8.58      5.08
+       3        0.0965      0.3356         0.3223       0.5197 0.479       9.17      5.21      4.69
+       4        0.0006      0.5707         0.0000       0.2775 0.000       8.29      9.78      3.43
+       5        0.0088      0.5289         0.3989       0.7746 0.000      10.28      8.31      7.46
+       6        0.0279      0.4466         0.8343       0.9042 0.000      10.35      6.79      5.40

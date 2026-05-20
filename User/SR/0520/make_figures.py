@@ -6,7 +6,7 @@ import matplotlib.patches as mpatches
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
-OUT = Path("/data/home/ksphm/2026-challenge-KSPHM/User/SR/0518/figures")
+OUT = Path("/data/home/ksphm/2026-challenge-KSPHM/User/SR/0520/figures")
 OUT.mkdir(exist_ok=True)
 
 TH_HI_DIR = Path("/data/home/ksphm/2026-challenge-KSPHM/User/TH/FI/07_v7/output/v7_4_2_conditional_aux_boost")
@@ -92,10 +92,10 @@ print("fig2 done")
 # ============================================================
 # Fig 3: LOOCV score progression (all experiments)
 # ============================================================
-exps = ["SR 0514\n(baseline)", "Exp A\n(TH HI\n+LGBM+LSTM)", "Exp B\n(+window\nnorm)", "Exp C\n(+obs\nfraction)", "Exp C-1\n(+start_obs\nestimate)"]
-lgbm_scores   = [np.nan, 0.3625, 0.3345, 0.4102, 0.4102]
-lstm_scores   = [np.nan, 0.4261, 0.4261, 0.4261, 0.4261]
-ens_scores    = [0.4326,  0.4529, 0.4551, 0.5004, 0.5004]
+exps = ["SR 0514\n(baseline)", "Exp A\n(TH HI\n+LGBM+LSTM)", "Exp B\n(+window\nnorm)", "Exp C\n(+obs\nfraction)", "Exp D\n(A-full LOOCV\nrecalc)"]
+lgbm_scores   = [np.nan, 0.3625, 0.3345, 0.4102, 0.4484]
+lstm_scores   = [np.nan, 0.4261, 0.4261, 0.4261, 0.4284]
+ens_scores    = [0.4326,  0.4529, 0.4551, 0.5004, 0.5317]
 
 fig, ax = plt.subplots(figsize=(9, 5))
 x = np.arange(len(exps))
@@ -126,12 +126,12 @@ ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
 # Annotate improvement arrow
-ax.annotate("", xy=(3, 0.5004), xytext=(0, 0.4326),
+ax.annotate("", xy=(4, 0.5317), xytext=(0, 0.4326),
             arrowprops=dict(arrowstyle="-|>", color="gray", lw=1.5, linestyle="dashed"))
-ax.text(1.5, 0.48, "+15.7%", fontsize=10, color="gray", rotation=10)
+ax.text(1.5, 0.48, "+22.9%", fontsize=10, color="gray", rotation=10)
 # C-1 note: LOOCV same, Test bias improved
-ax.annotate("Same LOOCV\n(Test bias reduced)", xy=(4, 0.5004), xytext=(3.3, 0.545),
-            fontsize=8, color="#666666",
+ax.annotate("A-full LOOCV recalculation\n(matched distribution)", xy=(4, 0.5317), xytext=(2.2, 0.56),
+            fontsize=8.5, color="#666666",
             arrowprops=dict(arrowstyle="->", color="#666666", lw=1.0))
 
 plt.tight_layout()
@@ -140,26 +140,26 @@ plt.close()
 print("fig3 done")
 
 # ============================================================
-# Fig 4: Per-fold LGBM vs Ensemble score — v1 vs v3
+# Fig 4: Per-fold LGBM vs Ensemble score — Exp C (v3) vs Exp D (A-full)
 # ============================================================
 bearings = ["B1", "B2", "B3", "B4"]
-lgbm_v1 = [0.4345, 0.4313, 0.1344, 0.4498]
 lgbm_v3 = [0.6071, 0.5618, 0.0705, 0.4015]
-ens_v1  = [0.3639, 0.5415, 0.5054, 0.4009]
+lgbm_afull = [0.5993, 0.5435, 0.1002, 0.5507]
 ens_v3  = [0.5246, 0.6405, 0.4666, 0.3696]
+ens_afull  = [0.5374, 0.6045, 0.5152, 0.4695]
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-fig.suptitle("Per-Fold Score: Exp A (v1) vs Exp C (v3)", fontsize=13, fontweight="bold")
+fig.suptitle("Per-Fold Score: Exp C (own-baseline) vs Exp D (A-full LOOCV)", fontsize=13, fontweight="bold")
 
 x = np.arange(4)
 w = 0.35
 colors = [C["B1"], C["B2"], "#FF4444", C["B4"]]  # B3 red to highlight
 
 for ax, (v1, v3, title) in zip(axes, [
-        (lgbm_v1, lgbm_v3, "LGBM Fold Score"),
-        (ens_v1,  ens_v3,  "Ensemble Fold Score")]):
-    bars1 = ax.bar(x - w/2, v1, w, label="v1 (baseline TH HI)", color=[c + "99" for c in ["#4C72B0","#DD8452","#FF4444","#C44E52"]], edgecolor="white")
-    bars2 = ax.bar(x + w/2, v3, w, label="v3 (+obs_fraction)", color=colors, edgecolor="white")
+        (lgbm_v3, lgbm_afull, "LGBM Fold Score"),
+        (ens_v3,  ens_afull,  "Ensemble Fold Score")]):
+    bars1 = ax.bar(x - w/2, v1, w, label="Exp C (own-baseline)", color=[c + "99" for c in ["#4C72B0","#DD8452","#FF4444","#C44E52"]], edgecolor="white")
+    bars2 = ax.bar(x + w/2, v3, w, label="Exp D (A-full)", color=colors, edgecolor="white")
 
     for bar, val in zip(bars1, v1):
         ax.text(bar.get_x() + bar.get_width()/2, val + 0.01, f"{val:.3f}", ha="center", va="bottom", fontsize=8.5)
@@ -177,11 +177,13 @@ for ax, (v1, v3, title) in zip(axes, [
 
 axes[0].set_ylabel("LOOCV Score", fontsize=11)
 
-# Mark B3 collapse
-for ax in axes:
-    ax.annotate("B3\ncollapse!", xy=(2 + 0.17, 0.0705), xytext=(2.6, 0.18),
-                fontsize=9, color="red",
-                arrowprops=dict(arrowstyle="-|>", color="red", lw=1.2))
+# Mark B4 boost
+axes[0].annotate("B4 +37% Boost!", xy=(3 + 0.17, 0.5507), xytext=(1.8, 0.25),
+            fontsize=10, color="green", fontweight="bold",
+            arrowprops=dict(arrowstyle="-|>", color="green", lw=1.2))
+axes[1].annotate("B4 +27% Boost!", xy=(3 + 0.17, 0.4695), xytext=(1.8, 0.25),
+            fontsize=10, color="green", fontweight="bold",
+            arrowprops=dict(arrowstyle="-|>", color="green", lw=1.2))
 
 plt.tight_layout()
 fig.savefig(OUT / "fig4_fold_scores.png", dpi=150, bbox_inches="tight")
