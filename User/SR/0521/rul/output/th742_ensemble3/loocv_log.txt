@@ -1,0 +1,22 @@
+SR/0521 — 3-Model Ensemble (LGBM+LSTM-A+Transformer-A) Bearing RUL Pipeline
+LOOCV uses DYNAMIC LOO-baseline HI recalculation
+
+LGBM avg:        0.4484
+LSTM-A avg:      0.4284
+Transformer avg: 0.4468
+Ensemble:        0.5080
+cf: Ens cf=1.00→0.5080
+
+  B1: LGBM=0.5993  LSTM-A=0.4684  Transformer-A=0.4890  Ens=0.5294
+  B2: LGBM=0.5435  LSTM-A=0.3874  Transformer-A=0.4151  Ens=0.5535
+  B3: LGBM=0.1002  LSTM-A=0.5007  Transformer-A=0.4722  Ens=0.4966
+  B4: LGBM=0.5507  LSTM-A=0.3572  Transformer-A=0.4109  Ens=0.4523
+
+Test inference (Train-baseline HI & Align start_obs):
+ test_id  hi_corr_start  hi_corr_end  estimated_start_obs  rul_hours  afull_hours  base0514
+       1         0.0011       0.8386                   36       6.80         7.08      5.05
+       2         0.8965       0.8965                  100       0.27         0.44      5.08
+       3         0.3223       0.5197                   68       2.23         2.38      4.69
+       4         0.0000       0.2775                   32       5.56         5.31      3.43
+       5         0.3989       0.7746                   70       1.86         1.90      7.46
+       6         0.8343       0.9042                   91       0.53         0.56      5.40

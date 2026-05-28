@@ -1,0 +1,21 @@
+SR/0521 — Transformer-A-full Bearing RUL Pipeline
+LOOCV uses DYNAMIC LOO-baseline HI recalculation
+
+LGBM avg:        0.4484
+Transformer avg: 0.4468
+Ensemble:        0.5070
+cf: Transformer cf=0.88→0.4541  Ens cf=1.20→0.5072
+
+  B1: LGBM=0.5993  Transformer-A=0.4890  Ens=0.5586
+  B2: LGBM=0.5435  Transformer-A=0.4151  Ens=0.5052
+  B3: LGBM=0.1002  Transformer-A=0.4722  Ens=0.4788
+  B4: LGBM=0.5507  Transformer-A=0.4109  Ens=0.4854
+
+Test inference (Train-baseline HI & Align start_obs):
+ test_id  hi_corr_start  hi_corr_end  estimated_start_obs  rul_hours  afull_hours  base0514
+       1         0.0011       0.8386                   36       7.88         7.08      5.05
+       2         0.8965       0.8965                  100       0.47         0.44      5.08
+       3         0.3223       0.5197                   68       2.61         2.38      4.69
+       4         0.0000       0.2775                   32       6.15         5.31      3.43
+       5         0.3989       0.7746                   70       2.11         1.90      7.46
+       6         0.8343       0.9042                   91       0.75         0.56      5.40

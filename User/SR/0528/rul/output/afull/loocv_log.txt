@@ -1,0 +1,21 @@
+SR/0528 — A-full Baseline & Align start_obs Bearing RUL Pipeline
+LOOCV uses DYNAMIC LOO-baseline HI recalculation
+
+LGBM avg:   0.4484
+LSTM-A avg: 0.4284
+Ensemble:   0.5317
+cf: LSTM-A cf=1.20→0.4358  Ens cf=1.10→0.5374
+
+  B1: LGBM=0.5993  LSTM-A=0.4684  Ens=0.5374
+  B2: LGBM=0.5435  LSTM-A=0.3874  Ens=0.6045
+  B3: LGBM=0.1002  LSTM-A=0.5007  Ens=0.5152
+  B4: LGBM=0.5507  LSTM-A=0.3572  Ens=0.4695
+
+Test inference (Train-baseline HI & Align start_obs):
+ test_id  hi_corr_start  hi_corr_end  estimated_start_obs  rul_hours  v4_hours  base0514
+       1         0.0011       0.8386                   36       7.08      7.40      5.05
+       2         0.8965       0.8965                  100       0.44      8.58      5.08
+       3         0.3223       0.5197                   68       2.38      5.21      4.69
+       4         0.0000       0.2775                   32       5.31      9.78      3.43
+       5         0.3989       0.7746                   70       1.90      8.31      7.46
+       6         0.8343       0.9042                   91       0.56      6.79      5.40

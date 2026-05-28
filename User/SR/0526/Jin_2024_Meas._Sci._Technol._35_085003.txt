@@ -1,0 +1,1227 @@
+Measurement Science
+and Technology
+
+You may also like
+
+PAPER
+
+Research on online anomaly detection methods
+for bearing degradation
+To cite this article: Shuowei Jin et al 2024 Meas. Sci. Technol. 35 085003
+
+View the article online for updates and enhancements.
+
+- Quantum support vector data description
+for anomaly detection
+Hyeondo Oh and Daniel K Park
+- Boundary sample extraction support vector
+data description: a novel anomaly
+detection method for large-scale data
+Xiaofei Wang, Yongzhan Chen, Fenglei
+Xu et al.
+- Abnormal data detection for industrial
+processes using adversarial autoencoders
+support vector data description
+Kepeng Qiu, Weihong Song and Peng
+Wang
+
+This content was downloaded from IP address 210.125.183.6 on 26/05/2026 at 00:49
+
+Measurement Science and Technology
+Meas. Sci. Technol. 35 (2024) 085003 (12pp)
+
+https://doi.org/10.1088/1361-6501/ad4621
+
+Research on online anomaly detection
+methods for bearing degradation
+Shuowei Jin1, Hongchao Xu1, Zhenlin Lu2,∗, Aiyun Yan1, Yuhang Zhao1 and Huan He1
+1
+
+College of Information Science and Engineering, Northeastern University, Shenyang 110819, People’s
+Republic of China
+2
+Beijing Institute of Microelectronics Technology, Beijing 100076, People’s Republic of China
+E-mail: 2362894439@qq.com
+Received 19 March 2024, revised 13 April 2024
+Accepted for publication 1 May 2024
+Published 8 May 2024
+Abstract
+
+In industrial applications, rolling bearings operate under conditions of high precision and high
+speed, and their physical and mechanical characteristics change with the increase in operating
+time. Traditional diagnostic methods struggle to adapt well to the changing characteristics of
+bearings for online anomaly detection. Therefore, this research proposes an online anomaly
+detection method for rolling bearings based on time-density-weighted incremental support
+vector data description (TISVDD). A classification strategy is proposed to prevent samples
+misclassification in the updating process. The Detection Boundary is established based on
+SVDD decision boundary to enhance the recognition of abnormal samples in the process of
+model updating. A dual-screening mechanism update strategy for support vectors is proposed. It
+involves establishing a preliminary screening mechanism based on the Elimination Boundary.
+On this basis, an in-depth screening mechanism based on time density weight is introduced by
+considering spatiotemporal characteristics of samples, enhancing the real-time performance of
+online anomaly detection for bearings. Building upon the fused dual-boundary SVDD, a
+TISVDD framework for online anomaly detection is proposed, enabling the detection model to
+dynamically update in response to data changes over time. To validate the effectiveness of the
+proposed method, experiments were conducted using the XJTU-SY bearing dataset and
+real-time datasets collected on an online hardware platform. The results demonstrate the
+effectiveness and superiority of the method in practical applications.
+Keywords: anomaly detection, dual-screening, rolling bearing, SVDD, online update
+
+1. Introduction
+
+online to follow the changes in bearing performance for realtime and accurate judgment of the bearing’s status. Hence, the
+research significance of online bearing anomaly detection is
+significant.
+Currently, online anomaly detection for bearings mainly
+focuses on the vibration signals of the bearings. Research
+methods are mainly divided into those based on physical
+characteristics and data-driven methods [3, 4]. In physical
+characteristics-based methods, the study primarily involves
+researching online bearing anomaly detection through mathematical modeling and signal processing based on the inherent characteristics of bearings. Jiang and Zhang [5] proposes a method for bearing vibration modeling and online
+fault size estimation, achieving model-based online fault
+
+Bearings, as common components in the industrial field, are
+also crucial parts of rotating machinery. About 44% of machine failures in the industrial field are related to bearing faults
+[1]. Therefore, research on bearing anomaly detection is essential. However, the performance of bearings is not constant
+throughout the entire industrial operation process [2]. With the
+accumulation of operating time, the performance of bearings
+gradually degrades. The original model will no longer adapt
+to the changes in new data, and the model needs to be updated
+∗
+
+Author to whom any correspondence should be addressed.
+
+1
+
+© 2024 IOP Publishing Ltd
+
+All rights, including for text and data mining, AI training, and similar technologies, are reserved.
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+detection and diagnosis. Wang et al [6] introduces an online
+speed-independent order tracking method, enabling online
+fault diagnosis of bearings under variable speeds. Liang et al
+[7] suggests a combined method of maximum correlation kurtosis deconvolution and band-pass filtering, enabling online
+detection of early weak structural damage in inter-shaft bearings of aircraft engines. Sharma et al [8] proposes establishing a sensitive sub-band selection criterion based on empirical wavelet transform of vibration signals, enabling online
+fault detection for constant and variable speed bearings. In
+data-driven methods, most current research on online anomaly
+detection tends to favor neural networks. Mao et al [9] proposes a rule-adaptive neural network architecture, constructing a deep multi-task single-class anomaly detection model.
+Mao et al [10] suggests constructing a deep dual-time domain
+adaptation model based on transfer learning, achieving early
+online fault detection of bearings through offline learning
+of degraded bearing sequences and online processing. Zhou
+et al [11] introduces a time-varying online transfer learning model for intelligent fault diagnosis of rolling bearings,
+achieving intelligent bearing fault diagnosis with incomplete
+and unlabeled target data. Liu et al [12] proposes integrating domain-adaptive deep stacked denoising autoencoder networks into an online early fault detection framework based
+on granularity feature prediction, achieving effective feature
+extraction for online bearing fault data. In the above methods,
+physically-based approaches generally require prior knowledge of bearings, making it challenging to address the complex variations and unknown fault modes in online bearing
+anomaly detection. Due to the difficulty in collecting sufficient bearing data in real scenarios, the data in the feature
+space tends to be imbalanced and unevenly distributed [13,
+14]. As a result, in data-driven approaches, methods leaning
+towards neural networks are prone to overfitting as a result.
+Additionally, neural network methods rely heavily on a large
+number of samples and have high computational complexity, making it challenging to improve the real-time performance of online bearing anomaly detection in resource-limited
+situations.
+Support vector data description (SVDD) [15], as another
+data-driven anomaly detection method, requires fewer samples
+compared to neural networks and can still perform reliably
+in anomaly detection with a limited number of samples.
+Additionally, it has a relatively lower computational complexity, making it easier to train and implement in environments with limited resources. However, traditional SVDD,
+when used for anomaly detection, remains unchanged once the
+model is trained. Since the performance of bearings degrades
+over long-term operation, the SVDD hypersphere model used
+for anomaly detection needs to follow the dynamic changes in
+bearing performance. Therefore, incremental SVDD (ISVDD)
+is more suitable for online bearing anomaly detection. The
+standard ISVDD [16] updates the model with all new samples
+each time, although it can demonstrate good performance, it
+incurs a significant time cost, resulting in a substantial reduction in model update speed. KISVDD [17] and NISVDD [18]
+train with new samples beyond the original model range and
+old samples near the decision boundary of the original model.
+
+KISVDD selects old samples for updating based on their
+distribution, while NISVDD selects old samples for updating based on the distribution of new samples. Both methods
+reduce the number of samples involved in the update to some
+extent, reducing computation and improving update speed.
+However, because they only observe the distribution of new
+or old samples within the original model range, their models
+exhibit lower robustness. Additionally, the boundary between
+categorizing samples outside the original model range as either
+abnormal or degenerated normal samples is unclear, leading
+to lower accuracy in anomaly detection. HISVDD [19] integrates the accumulated fewer new samples, enhanced through
+data augmentation, with the old samples near the original
+model’s decision boundary for joint training. This approach
+enhances the robustness of the model. However, in situations
+with high sampling frequency, the introduction of data augmentation leads to a decrease in the model’s updating speed.
+Additionally, the anomaly detection rate is relatively low, similar to the methods mentioned above.
+Based on the above analysis, three key challenges in
+ISVDD-based bearing online anomaly detection can be highlighted.
+(1) The model faces challenges in defining abnormal samples
+during the updating process, making it prone to samples
+misclassification, resulting in false alarms and false positives, ultimately leading to a lower bearing anomaly detection rate.
+(2) While maintaining high robustness, the model faces difficulties in improving update speed, as it requires a large
+number of samples for comprehensive training, resulting
+in lower real-time capabilities for bearing online anomaly
+detection.
+(3) The model struggles with stable online updates, failing to
+adapt to the real changes in bearing data, resulting in the
+difficulty of robust online anomaly detection for bearings.
+In response to the above three challenges, through careful
+analysis, we can draw the following three conclusions:
+(1) When bearings degrade in performance, there are normal
+samples nearby and abnormal samples farther away from
+the original model. Therefore, the separation of normal
+and abnormal samples is crucial for improving the bearing anomaly detection rate.
+(2) During the updating process, a large number of samples
+participate in the update training, leading to a decrease in
+update speed. Therefore, selecting fewer suitable samples
+for updates is crucial for improving the real-time performance of bearing online anomaly detection.
+(3) The model cannot adapt to the changes in online real bearing data, with a large number of mixed normal and abnormal samples participating in training updates. Therefore,
+establishing an online update scheme that removes abnormal samples and selects appropriate normal samples is
+crucial for stable online bearing anomaly detection.
+2
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+Based on the above analysis, this research proposes an
+online adaptive updating SVDD anomaly detection method.
+The main contributions of this research are as follows:
+
+during the model’s online updating. Additionally, a dualscreening mechanism update strategy for SVs is introduced.
+It establishes the elimination boundary, conducts preliminary
+screening on samples that may become new support vectors
+(nSVs), and then further screening through a time-densityweighted update strategy. This reduces the number of samples
+involved in updates under higher robustness, thereby improving the speed of model updates. Finally, the TISVDD framework for online anomaly detection is proposed. Built on the
+foundation of a fused dual-boundary SVDD, the samples are
+then given time density weights for screening. This allows the
+model to dynamically update in the time dimension, achieving
+robust online anomaly detection for bearings.
+
+(1) A classification strategy is proposed to prevent samples
+misclassification in the updating process. The Detection
+Boundary is established based on SVDD decision boundary to improve the model’s identification of abnormal
+samples and to improve the accuracy of bearing online
+abnormal detection.
+(2) A dual-screening mechanism update strategy for support
+vector is proposed. It involves establishing a preliminary
+screening mechanism based on the Elimination Boundary.
+On this basis, an in-depth screening mechanism based
+on time density weight is established combining with the
+spatiotemporal characteristics of samples. This approach
+aims to enhance the model’s update speed, consequently
+improving the real-time capability of bearing online anomaly detection.
+(3) A time-density-weighted ISVDD (TISVDD) framework
+for online anomaly detection is proposed. Based on the
+fused dual-boundary SVDD, the samples are then given
+time density weights for screening, so that the model is
+dynamically updated in time dimension with data changes
+to achieve robust online anomaly detection of bearings.
+
+2.1. ISVDD introduction
+
+SVDD aims to identify the SVs of target samples in multidimensional space to provide the optimal data description,
+thereby constructing the minimum hypersphere, thus improving classification performance. Assuming there exists a dataset X = {x1 , x2 , . . . , xN }, in which N denotes the count of target
+data points. The problem is described as follows:
+min R2 + C
+
+n
+∑
+
+ξi
+
+i =1
+
+s.t.| |Φ (xi ) − c| |2 ⩽ R2 + ξ i , ∀i
+
+The rest of this research is organized as follows: section 2
+introduces the necessity of model updates based on ISVDD,
+and a classification strategy to prevent misclassification of
+samples during the updating process, a dual-screening mechanism update strategy for support vectors (SVs), and an online
+anomaly detection framework based on TISVDD are proposed. Section 3 includes a comparative experiment with
+other methods and presents the experimental results. Lastly,
+section 4 provides a comprehensive conclusion for the entire
+research.
+
+(1)
+
+where ξ i ⩾ 0 (i = 0, 1, . . . , n), R is the radius of the hypersphere, C is a penalty factor, and ξ i is the relaxation
+factor. Φ (xi ) represents the nonlinear mapping function of the
+sample xi in the high-dimensional feature space. The volume
+of the hypersphere is minimized by minimizing R2 . To solve
+the above optimization problem, constructing the Lagrangian
+function allows the transformation of the optimization problem into the following dual problem:
+
+2. Proposed method
+
+min
+
+The online anomaly detection model based on ISVDD does
+not consider the delineation between anomalous samples and
+degraded normal samples during model updates, leading to
+a decrease in anomaly detection accuracy. Simultaneously,
+the involvement of a large number of new or old samples in
+updating the model results in a decrease in the model update
+speed, thereby reducing the real-time capability of bearing
+online anomaly detection. The existence of these issues can
+make bearing online anomaly detection challenging to achieve
+robustly.
+In this section, to improve the discrimination accuracy of
+new samples and simultaneously enhance the speed of model
+updates for robust online anomaly detection of bearings, this
+research, starting from the necessity of ISVDD, first proposes
+a classification strategy to prevent samples misclassification
+during the updating process. By establishing the Detection
+Boundary, it can effectively discriminate anomalous samples
+
+s.t.
+
+n
+∑
+
+αi (Φ (xi ) · Φ (xj )) −
+
+i =1
+n
+∑
+
+n ∑
+n
+∑
+
+αi αj (Φ (xi ) · Φ (xj ))
+
+i =1 j =1
+
+αi = 1, 0 ⩽ αi ⩽ 1
+
+(2)
+
+i =1
+
+where αi ⩾ 0 is the Lagrange multiplier. Solving this optimization problem yields:
+ci =
+
+n
+∑
+
+αi Φ (xi )
+
+(3)
+
+i =1
+
+R2 = | |Φ (xsv ) − ci | |2
+= (Φ (xsv ) · Φ (xsv )) − 2
+
+n
+∑
+
+αi (Φ (xi ) · Φ (xsv ))
+
+i =1
+
++
+
+n ∑
+n
+∑
+i =1 j =1
+
+3
+
+αi αj (Φ (xi ) · Φ (xj )) .
+
+(4)
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+For an unknown sample z, the distance from z to c is:
+d2 = ||Φ (z) − ci ||2
+= (Φ (z) · Φ (z)) − 2
+
+n
+∑
+
+αi (Φ (xi ) · Φ (z))
+
+i =1
+
++
+
+n ∑
+n
+∑
+
+αi αj (Φ (xi ) · Φ (xj )) .
+
+(5)
+
+i =1 j =1
+
+If d2 ⩽ R2 , then z is within the hypersphere and belongs to
+the normal samples.
+For the ISVDD algorithm, new samples enter the classifier
+in batches over time for online anomaly detection. When αi
+achieves the optimal solution, the observed the sample xi satisfies the Karush–Kuhn–Tucker (KKT) conditions:
+αi = 0 ⇒ d2 < R2
+0 < α i < C ⇒ d2 = R2 .
+αi = C ⇒ d2 > R2
+
+Figure 1. Schematic of the detection boundary.
+
+(6)
+The establishment of the Detection Boundary outside the
+hypersphere decision boundary aims to resolve the determination of anomalous samples during the model updating process.
+By setting an appropriate detection threshold and establishing a suitable Detection Boundary, the objective is to ensure
+that degraded normal samples during the model updating process fall within the Detection Boundary, while anomalous
+samples fall outside the detection boundary. Setting the detection threshold:
+
+Samples xi that satisfy 0 < αi < C are SVs, thereby constructing the hypersphere decision boundary. For newly added
+samples, if they meet the KKT condition d2 < R2 , then the
+SVs remains unchanged, and the model does not need to
+be updated. However, if there are samples among the newly
+observed samples that violate the KKT conditions (SVKs), the
+previously computed Lagrange multiplier αi will no longer
+satisfy the new model. In this case, the model needs to be
+updated to meet the requirements of online anomaly detection for bearings [20]. Regarding model updates, the discrimination of online anomalous samples and the improvement of
+model update speed are important research directions in online
+anomaly detection.
+
+λ=
+
+R
+, 0<λ⩽1
+Rλ
+
+(7)
+
+where Rλ is the radius of the detection boundary. The minimum value of Rλ cannot be less than R. If it is less than R, it
+may misclassify normal samples violating the KKT conditions
+as anomalous samples. When equal to R, the detection boundary coincides with the decision boundary, and at this point, Rλ
+is minimized, equivalent to the offline SVDD anomaly detection model. The choice of the detection threshold determines
+the model’s tolerance to anomalous samples in online anomaly
+detection. A lower detection threshold leads to a larger detection boundary relative to the decision boundary, resulting in a
+higher misclassification rate of anomalous samples. Through
+statistics, it is observed that during the actual operation of
+bearings, anomalous samples are generally located outside
+the boundary at twice the radius from the center of the bearing’s hypersphere. Therefore, setting the detection boundary
+threshold λ to 0.5 and considering this boundary as the detection boundary will enhance the accuracy of anomaly detection.
+The establishment of the detection boundary will address
+the challenge of misclassifying anomalous samples during the
+updating process. It will enable the model to achieve precise
+identification of anomalous samples during the updating process, thereby improving the accuracy of online bearing anomaly detection.
+
+2.2. A classification strategy to prevent samples
+misclassification during the updating process
+
+In the context of the ISVDD method, for the discrimination of online anomalous samples, if there are SVKs in the
+observed samples, typically all SVKs participate in model
+updates. Subsequently, the updated model is used to perform
+online anomaly detection on the new samples from the current test set. However, in practice, there may be anomalous
+samples within SVKs. If all SVKs are included in model
+updates, anomalous samples may also become SVs, causing
+potential misclassification of samples during the updating process. Consequently, this can lead to a reduction in the adaptability of the updated model, so that the accuracy of bearing
+online anomaly detection decreases.
+Addressing the challenge of misclassification of anomalous
+samples in the online bearing anomaly detection mentioned
+above, we propose a classification strategy to prevent samples
+misclassification during the updating process, based on the
+design concept of the dual-boundary SVDD [21] for handling
+misclassified samples. Detection boundaries are established
+outside the hypersphere decision boundary, as illustrated in
+figure 1.
+
+4
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+The establishment of the Elimination Boundary aims to
+conduct a preliminary screening for the participating nSVs in
+the update. Due to the degradation of bearing performance,
+under normal circumstances, samples on the SVDD model
+tend to diverge towards the surroundings. There may also be a
+slight overall offset towards the sides. Therefore, the samples
+becoming SVs for the next model do not necessarily all come
+from SVKs; they may also come from the original model’s
+SVs and samples near the decision boundary inside. The establishment of the Elimination Boundary is used to retain samples
+near the decision boundary, providing fewer suitable nSVs for
+the model’s update. By setting a suitable elimination threshold,
+an appropriate elimination boundary is established, leading to
+the elimination of all new and old samples falling within the
+elimination boundary. Setting the elimination threshold:
+
+Figure 2. Illustration of elimination boundary.
+
+2.3. A dual-screening mechanism update strategy for
+support vector
+
+β=
+
+The problem of misclassification of samples during the
+model updating process has been resolved. However, the
+improvement of model update speed remains a key research
+focus in current online anomaly detection.
+
+Rβ
+, 0<β<1
+R
+
+(8)
+
+where Rβ is the radius of the elimination boundary. When Rβ
+is minimum zero, it means that no elimination is carried out,
+and when Rβ is maximum R, it means that all the old and new
+samples within the decision boundary of the previous model
+are eliminated, and only SVKs are retained. Failure to eliminate samples will lead to an increasing number of samples
+participating in the update training. Eliminating all new and
+old samples within the decision boundary will result in no old
+samples participating in the update training. Therefore, the
+minimum value of Rβ should be greater than zero, and the
+maximum should be less than R. The selection of the elimination threshold determines the model’s punishment level for
+samples within the decision boundary of the online anomaly
+detection model. The higher the elimination threshold, the larger the elimination boundary relative to the decision boundary, resulting in more elimination of new and old samples,
+and consequently, fewer participating nSVs in the update. In
+the actual operation process of bearings, newly added samples
+generally disperse uniformly outward along the sphere center
+as the bearing performance degrades. However, considering
+the possibility of overall deviation, combined with the statistical results of multiple experiments, the elimination threshold
+β is set to 0.54 as the most suitable. By setting the current
+boundary as the elimination boundary, it is possible to significantly reduce the number of samples participating in the
+update while maintaining the robustness of the model update
+process.
+
+2.3.1. Preliminary screening mechanism based on the
+Elimination Boundary.
+To enhance the speed of model
+
+updates, a new challenge arises in the sample selection during
+the model updating process for ISVDD. For online anomaly
+detection, the selection of samples participating in updates can
+be categorized into three types: using all old samples, using all
+new samples, and using a combination of new and old samples
+[22]. Using only old samples cannot capture the degradation
+trend of bearing equipment, making the model unable to adapt
+to new samples. SVDD is sensitive to noise, and using only
+new samples may lead to significant bias in the new model
+due to incidental reasons such as sensor acquisition errors
+and environmental interference [23]. Using only old samples
+and using only new samples both fail to adapt to the characteristics of model updates over the entire lifespan of bearing
+equipment, and using synthetic samples combining new and
+old data can effectively address this challenge. However, if all
+new and old samples are used to train SVDD, as the number
+of updates increases during the degradation of bearing equipment performance, the number of samples involved in training
+will also increase, leading to a progressively higher computational complexity. This makes it impossible to achieve timely
+monitoring of bearing status.
+To address the challenge of improving model update speed,
+a dual-screening mechanism update strategy for supporting
+vectors is proposed. The first step involves a preliminary
+screening of samples within the hypersphere. Similar to the
+principle of establishing the detection boundary, the elimination boundary is established within the hypersphere decision
+boundary, as shown in figure 2. The black dashed line represents the original model decision boundary, the red solid line
+represents the elimination boundary, and on the left, new and
+old samples are added to the hypersphere original model, while
+on the right, the elimination boundary eliminates new and old
+samples added to the original model.
+
+2.3.2. In-depth screening mechanism based on time density
+weight. The second step of the dual-screening mechanism
+
+update strategy is to propose a screening mechanism based on
+time density weight on the basis of the preliminary screening
+at the elimination boundary. It performs in-depth screening on
+the remaining nSVs to involve fewer samples in the update,
+further enhancing the real-time capability of online anomaly
+detection in bearings.
+In the process of model updating, new and old samples participate in the update training together, but their contributions
+to the model are different. The model at the current moment
+5
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+should be established based on the samples collected at the
+current moment to achieve anomaly detection at the current
+moment. Online anomaly detection for bearings is aimed at
+detecting anomalies at each moment during the entire lifecycle
+of the bearing’s operation, so new samples are crucial for the
+establishment of a new model. In comparison, old samples
+only provide a past reference for the new model, allowing
+the new model to avoid significant deviations caused by noise
+interference. As the number of updates increases, the contribution of old samples to the new model will gradually decrease.
+Therefore, the time decay weight function is proposed for the
+sample xi :
+Wi (t) = e−αt , α > 0
+
+Figure 3. Details of samples distribution with time density weights.
+
+(9)
+
+where t is the time step, Wi (t) represents the time decay weight
+of the ith sample at time t. α is the decay coefficient, and by
+adjusting α, the decrease rate of the time decay weight can be
+flexibly controlled. The value of α can be empirically determined through multiple experiments. New samples are assigned
+the highest time decay weights, while old samples are assigned
+relatively lower time decay weights. With the increase in the
+number of updates, the time decay weight of each sample
+decreases sequentially. The concept of time decay weights
+for samples is relative between new and old samples. When
+new samples are input in the next time step, the previous new
+samples become old samples for the next time step. Therefore,
+the time decay weight of a sample itself only decreases sequentially, approaching zero gradually, but never reaching zero.
+The lower the time decay weight of a sample, the earlier it participated in model updating training, the more times it participated in updates, the smaller its contribution to the new model,
+and the less likely it is to become the SVs.
+The time decay weights of samples provides temporal relative weights, but for the selection of nSVs, the temporal weights
+of samples cannot ignore the spatial density information. In the
+SVDD model updating process, the influence between samples
+is continuous, and this influence is not only temporal but also
+spatial, where neighboring samples will inevitably affect the
+sample at that point in space. Therefore, based on the time
+decay weight, the idea of K-nearest neighbors (KNN) can be
+borrowed [24], proposing the time density weight function for
+each the sample xi :
+k
+∑
+
+WTDi =
+
+The time density weight function considers the spatial relationship between samples on the basis of time decay weights,
+fully reflecting the evolution and correlation of samples in
+both time and space. The lower the time density weight of a
+sample, the lower the temporal decay weight in its vicinity.
+In spatial terms, this is manifested by higher isolation in time
+decay weights, such as newer samples with higher isolation
+or samples with time decay weights similar to their neighbors. Consequently, the likelihood of becoming SVs for that
+sample is lower. Higher isolation in time decay weights in
+space implies a higher probability of being affected by noise
+interference, resulting in a lower likelihood of becoming SVs
+naturally.
+The detailed distribution chart of time density weights for
+samples is shown in figure 3. Taking the first model update
+as an example, the time decay weights for old samples is
+Wi (1) = e−α , and for new samples, the time decay weights are
+Wi (0) = 1.Therefore, the time density weight for the sample
+xj is WTDj = e−α , for the sample xm is WTDm = e−α , for the
+−α
+sample xk is WTDk = 2e 3 +1 , and for the sample xn is WTDn =
+1, with WTDj = WTDm < WTDk < WTDn .The sample xn has the
+highest time density weight, making it the most likely to
+become SVs. The sample xj and xm have equal and lowest
+time density weights, making them the least likely to become
+SVs after this round of updates and are likely to be eliminated.
+In particular, the sample xj , compared to the sample xk , is a
+new sample with the highest isolation in time decay weight in
+space, making it the most likely to be affected by noise and
+should be excluded from becoming SVs. It should be eliminated in this round of in-depth screening mechanism.
+By eliminating a batch of samples with the lowest time
+density weights and making the remaining samples participate
+in the updating training, the in-depth screening after the preliminary screening of nSVs will be realized, and the samples
+participating in the updating will be further reduced.
+The proposal of the dual-screening mechanism update
+strategy involves layer-by-layer screening of nSVs, effectively
+reducing the number of samples involved in the update while
+maintaining model robustness. This results in a significant
+reduction in computational workload, thereby enhancing the
+speed of model updates and improving the real-time capability of online bearing anomaly detection.
+
+Wi (t)
+
+i =1
+
+k
+
+(10)
+
+where Wi (t) is the time decay weight of the sample xi , k is the
+number of nearest neighbors for the sample xi , and the value
+of k can be determined through multiple experiments based on
+experience. The time density weight function calculates the
+average of the time decay weights of the k nearest samples to
+the sample xi , excluding the sample xi itself. This ensures that
+the sample focuses more on the influence of nearby samples
+on itself, avoiding noise interference that may cause some
+samples to deviate from the overall impact, thereby ensuring
+the robustness of the model.
+6
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+and removing abnormal samples during updates. Layered
+screening of nSVs significantly reduces the number of samples
+involved in updates, achieving an effective improvement in
+update speed and enhancing the accuracy and real-time performance of online bearing anomaly detection.
+
+2.4. Online bearing anomaly detection framework based on
+time density weight
+
+During the whole life cycle of bearings, various factors such
+as harsh working environment, external interference and performance degradation may lead to abnormal vibration signals
+collected, so the monitoring of vibration data is of great significance for the online abnormal detection of bearings [25].The
+health stage of a bearing constitutes 80%–90% of its entire
+lifespan [2, 26]. During the health stage, the vibration data generally exhibits a long-term, small, and stable fluctuation trend.
+Subsequently, it enters a short-term degradation stage, where
+the amplitude of the bearing vibration data gradually increases.
+Finally, it reaches an extremely short failure stage, marked by
+a sudden and significant increase in the amplitude of vibration
+data. Entering this stage signifies reaching the end of the operational lifespan, indicating that the bearing is no longer operational. During the entire lifespan of the bearing, the vibration data fluctuates around zero, with both positive and negative amplitudes roughly balanced. Additionally, a small amount
+of anomalous data is generated throughout the entire lifespan
+stage.
+Based on the characteristics of the vibration data throughout the entire lifespan of the bearing and to meet the
+requirement of improving real-time performance under limited resources, we propose a TISVDD online anomaly detection framework. This framework integrates the detection
+boundary and elimination boundary into a dual-boundary
+SVDD model. Subsequently, samples are assigned time density weights for screening, allowing the model to dynamically
+update with the changing data in the time dimension. This
+approach aims to achieve robust online anomaly detection for
+bearings.
+The vibration signals of the bearing are continuously
+acquired online as a batch to form the online degradation dataset. The initial set of samples is used to train the dual-boundary
+SVDD model to make it complete. New samples are then introduced to determine if they satisfy the KKT conditions. If all
+new samples satisfy the KKT conditions, the model does not
+undergo an update, and the evaluation is deferred until the next
+batch of samples arrives. In case there are new samples violating the KKT conditions, the detection boundary is employed
+to identify abnormal samples among them. The remaining new
+samples are combined with the old samples from the previous
+stage. Preliminary screening of nSVs is carried out using the
+Elimination Boundary. Time density weights are assigned to
+samples, and in-depth screening of nSVs is performed based
+on these weights. Finally, the updated dual-boundary SVDD
+model is constructed using the remaining nSVs. This process is
+repeated until the bearing enters the fault stage, at which point
+the model ceases to update, and the bearing becomes inoperative. The overall framework of TISVDD for online anomaly
+detection is illustrated in figure 4, and the algorithmic flowchart of TISVDD is shown in figure 5.
+The proposal of the TISVDD online anomaly detection
+framework based on bearings starts from the characteristics
+of bearing vibration data. This allows the model to closely
+follow data changes for stable updates, effectively defining
+
+3. Simulation
+3.1. Data setting
+
+To verify the effectiveness and superiority of the proposed
+method in this experiment, we utilize the publicly available
+XJTU-SY Bearing Datasets to validate the first two innovations. This dataset is gathered from the bearing acceleration
+degradation test platform of Xi’an Jiaotong University’s joint
+laboratory. It aims to demonstrate the enhancement in anomaly detection accuracy during the model update process, as
+proposed in the first innovation, and to confirm the improvement in model update speed during the process, as proposed in
+the second innovation. Subsequently, the validity of the online
+anomaly detection of the TISVDD model, proposed as the
+third innovation, is verified using a real-time dataset collected
+on the online hardware platform. The online hardware platform can real-time capture bearing vibration data and perform
+online detection, as illustrated in figure 6.
+The XJTU-SY bearing dataset has a sampling frequency of
+25.6 kHz, recording 32 768 samples of lateral and longitudinal
+vibration data in each sampling. This experiment studied the
+vibration data of three different bearings under conditions of
+2100 RPM speed, 35 Hz frequency, and 12 kN load, ranging
+from normal to failure states. Experimental verification shows
+that training the SVDD model with 500 samples makes the
+model complete. Therefore, the degradation dataset for each
+file includes the first 500 samples for subsequent experiments,
+as shown in table 1.
+3.2. Validation of TISVDD classification strategy
+
+In this section, the effectiveness of the classification strategy
+proposed in this research to prevent misclassification of
+samples during the updating process is verified. It aims to
+demonstrate the improvement in online anomaly detection
+accuracy compared to traditional methods and current mainstream methods. Three metrics are selected for evaluation:
+average accuracy (AA), and F-score. Recall (TPR) is the score
+for true positives (TP), specificity (TNR) is the score for
+true negatives (TN), and precision (TPP) provides a balance
+between TP and FP accuracy. F-score is a highly suitable
+method for evaluating the accuracy of anomaly detection in
+imbalanced datasets. Its value is the harmonic mean of TPR
+and TPP, and it becomes significant only when both TPR and
+TPP are high. The formula is as follows:
+TP
+TP + FN
+TN
+TNR =
+TN + FP
+TPR =
+
+7
+
+(11)
+(12)
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+Figure 4. Overall framework of TISVDD online anomaly detection based on bearings.
+
+TP
+TP + FP
+2 ∗ TPR ∗ TPP
+F − score =
+.
+TPR + TPP
+TPP =
+
+To visually illustrate the adaptability of the TISVDD
+algorithm in online anomaly detection to different sample
+quantities during the update process, we conducted a
+comparative bar chart of the classification accuracy of the
+proposed TISVDD with the current mainstream algorithm
+HISVDD and the traditional incremental algorithm standard
+ISVDD across varying numbers of incremental samples. The
+results are shown in figure 7.
+From figure 7, it is visually evident that TISVDD, proposed in this research, exhibits lower classification accuracy
+in online anomaly detection when there are fewer samples,
+indicating that the model is not yet complete. Similar to the
+other two methods, with too few samples, the differences in
+features between anomaly and normal samples are not as distinct, making the model prone to false positives or missing positives. As the number of added samples increases, the model
+gradually becomes complete, and the classification accuracy
+of TISVDD stabilizes above 96%, significantly higher than
+the other two methods. This suggests a notable online anomaly detection performance, demonstrating good adaptability
+to varying sample quantities. Therefore, table 2 and figure 7
+together validate the outstanding online anomaly detection
+
+(13)
+(14)
+
+The TISVDD algorithm proposed in this research is
+compared with standard ISVDD, KISVDD, NISVDD, and
+HISVDD algorithms on three bearing datasets for online
+anomaly detection accuracy using the average F-score evaluation metric. The results are shown in table 2.
+According to table 2, the TISVDD algorithm proposed
+in this research has the highest F-score on all three bearing datasets compared to other methods. This indicates that
+the performance of TISVDD in terms of online anomaly
+detection accuracy is the best. It is evident that the classification strategy of the TISVDD algorithm accurately distinguishes between abnormal samples and degraded normal
+samples in SVKs, effectively identifying abnormal samples
+during the update process. Moreover, it achieves an improvement in online anomaly detection accuracy compared to other
+algorithms.
+
+8
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+Table 2. F-score on data sets.
+
+Bearing data set ISVDD KISVDD NISVDD HISVDD TISVDD
+Bearing 1_1
+Bearing 1_4
+Bearing 1_5
+
+86.55
+87.36
+85.96
+
+90.25
+92.33
+91.28
+
+94.26
+93.58
+93.85
+
+94.46
+92.68
+93.57
+
+97.81
+97.58
+96.38
+
+Figure 5. Algorithm flowchart of TISVDD.
+Figure 7. Classification accuracy of TISVDD.
+
+3.3. Validation of TISVDD update strategy
+
+To demonstrate the TISVDD algorithm’s ability to maintain
+good robustness during model updates and its improvement
+in update speed, we conducted a comparison with several
+mainstream algorithms. We refer to the model trained on the
+newly added dataset at each moment as the true model at that
+moment, the model trained by standard ISVDD. The TISVDD
+algorithm proposed in this research and the models updated by
+other mainstream algorithms serve as predictive models. The
+similarity between the predictive models and the true models is used as the metric for comparing our method with other
+algorithms. During the model update process, only the hypersphere center c, hypersphere radius R, and support vectors SVs
+may undergo changes. Since c and R can be obtained from
+SVs, this allows us to calculate the Spearman correlation coefficient of SVs between the predictive models generated by our
+algorithm and other algorithms and the true models, serving
+as a measure of similarity.
+In the online update algorithm, the SVs of the true model
+serve as the dataset rSVs, and the SVs of the predicted model
+serve as the dataset pSVs. Assuming that the data lengths of
+rSVs and pSVs are both n, where any element value i in the
+set is represented as ri, pi (1 ⩽ i ⩽ n), perform simultaneous
+ascending or descending sorting on all elements in the data
+rSVs and pSVs. This results in newly sorted sets RSVs and
+PSVs, where the element Ri is the ith element in RSVs, and Pi
+is the ith element in PSVs. Subtract the corresponding position
+
+Figure 6. Online hardware platform.
+Table 1. Degradation data set of bearings in different failure states.
+
+Bearing dataset
+Bearing 1_1
+Bearing 1_4
+Bearing 1_5
+
+Number
+of files Fault element
+123
+122
+52
+
+Outer race
+Cage
+Inner and outer race
+
+Number of
+samples per file
+500
+500
+500
+
+capabilities of TISVDD and its improvement in online anomaly detection accuracy compared to other online anomaly
+detection methods.
+9
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+Table 3. The data sets used in the algorithm accuracy tests.
+
+Average update time (s)
+Bearing dataset ISVDD KISVDD NISVDD HISVDD TISVDD
+Bearing 1_1
+Bearing 1_4
+Bearing 1_5
+
+algorithms.
+
+elements in the sets RSVs and PSVs to obtain a rank difference
+set D, where di = ri − pi, di ∈ D, 1 ⩽ i ⩽ n. With m being the
+number of updates in the degradation stage, the formula for
+calculating the Spearman rank correlation coefficient between
+the support vectors rSVs and pSVs for the jth update is as
+follows:
+n
+∑
+
+ρj = 1 −
+
+i =1
+
+.
+
+ρ=
+
+(15)
+
+ρj
+
+j =1
+
+m
+
+.
+
+1.24
+1.21
+1.15
+
+0.82
+0.79
+0.72
+
+For validating the effectiveness of the TISVDD algorithm in
+model updating proposed in this research, we utilized an online
+hardware platform to collect real-time bearing vibration data.
+The process diagram of updating the model using the TISVDD
+algorithm is presented in MATLAB, as shown in figure 9.
+From figure 9, the entire process of TISVDD algorithm
+updating the model can be intuitively observed. In figure 9(b),
+compared to figure 9(a), the dual-boundary SVDD is used
+for training, and the elimination boundary screens the old
+samples of the original model. The number of samples is
+reduced by 61.6%, but the model hardly changes. It can be
+seen that the establishment of the elimination boundary of the
+dual-boundary SVDD allows the model to maintain robustness
+while significantly reducing the number of samples, effectively reducing computation. Additionally, in figure 9(d), a
+depth filtering mechanism based on time density weight is
+applied on top of figure 9(c) to train the model for complete updates, reducing the number of samples by 41.5%.
+For the entire process of TISVDD algorithm updating the
+model, considering the participation of both new and old
+samples in updates results in a reduction of 71.8% in samples,
+while considering either new or old samples alone reduces
+the samples by 43.6%, achieving a significant reduction in
+samples and a substantial decrease in computation, thereby
+enhancing update speed. From figures 9(a) to (d), the TISVDD
+algorithm stably updates the original model to the new model
+
+The average Spearman rank correlation coefficient
+throughout the entire lifespan update process is calculated
+as follows:
+m
+∑
+
+1.44
+1.38
+1.31
+
+3.4. Validation of TISVDD model updating
+
+d2i
+
+n (n2 − 1)
+
+1.54
+1.62
+1.49
+
+the model gradually becomes complete. The correlation coefficient of the TISVDD algorithm’s updated model stabilizes
+above 0.96, demonstrating that the update strategy of the
+TISVDD algorithm is well-adapted to model updates caused
+by the degradation of bearing performance. It can adapt to
+changes in Incremental samples and exhibits good robustness.
+Additionally, from table 3, it can be seen that the TISVDD
+algorithm has lower average update times for individual models significantly across the three bearing datasets compared to
+other algorithms. This confirms that the TISVDD algorithm
+effectively reduces computational workload and improves
+update speed. Considering figure 8 and table 3 together,
+it can be concluded that the TISVDD algorithm maintains
+model robustness during the update process while achieving
+an improvement in model update speed, enhancing the realtime capability of bearing online anomaly detection.
+
+Figure 8. Average spearman correlation coefficients for different
+
+6
+
+25.18
+22.35
+20.16
+
+(16)
+
+The TISVDD algorithm proposed in this research, along
+with the standard ISVDD, KISVDD, NISVDD, and HISVDD
+algorithms, undergo online updates on the aforementioned
+bearing degradation datasets. The average Spearman rank correlation coefficients are shown in figure 8, and the average
+update time for individual models is presented in table 3.
+From figure 8, it can be seen that the TISVDD algorithm,
+proposed in this research, exhibits the highest average
+Spearman rank correlation coefficient during the model updating process across all ranges of Incremental samples. This
+indicates that the model updated by the TISVDD algorithm
+has the highest similarity with the true model. In cases with
+fewer samples, the correlation coefficient is lower because the
+model is not complete. As the number of samples increases,
+
+10
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+Figure 9. TISVDD model updates: (a) SVDD training; (b) dual-boundary SVDD training; (c) preliminary screening; (d) in-depth screening.
+
+following the data changes, fully demonstrating the effectiveness of TISVDD algorithm in updating online anomaly detection models and achieving robust online anomaly detection for
+bearings.
+
+Boundary, significantly enhance the model’s ability to identify
+abnormal samples during the update process, prevent misclassification of abnormal samples, highlighting the uniqueness of our method. Secondly, we propose a dual-screening
+mechanism update strategy for SVs. After preliminary screening of new and old samples that may become SVs based on
+the establishment of the Elimination Boundary, an in-depth
+screening is performed on the remaining samples based on
+time density weight, thereby greatly reducing the number of
+samples involved in the update, effectively reducing the computational load, and enhancing the real-time performance of
+bearing online anomaly detection. This demonstrates the novelty of our method. Finally, we propose an ISVDD online
+anomaly detection framework based on time density weight,
+merging the detection boundary and elimination boundary
+into a dual-boundary SVDD model. Subsequently, samples
+are assigned time density weight for screening, allowing the
+model to dynamically update with changes in bearing vibration data in the time dimension, achieving robust online anomaly detection for bearings. In conclusion, the proposed method
+is not only theoretically innovative but also exhibits significant
+
+4. Conclusion
+This manuscript proposes an online anomaly detection model,
+TISVDD, designed for the online operational scenarios of
+bearings. The model innovatively achieves online anomaly
+detection for bearings. TISVDD is designed to improve the
+accuracy and update speed of online anomaly detection for
+bearing operational data in current ISVDD methods. Thorough
+validation is conducted using the XJTU-SY bearing dataset
+and real-time data collected from an online hardware platform. We confirm the rationality and effectiveness of the proposed method and obtain a series of valuable conclusions,
+providing important insights for future research. Firstly, we
+introduce a classification strategy to prevent samples misclassification during the update process, establish the Detection
+11
+
+Meas. Sci. Technol. 35 (2024) 085003
+
+S Jin et al
+
+novelty in practical applications. It provides profound insights
+for further research in the field of online anomaly detection for
+bearings.
+However, this method still has some shortcomings. For
+example, the updating strategy proposed in this paper still
+requires retaining a large number of samples for training
+updates. If too many samples are reduced through this method,
+the model after updating training will differ significantly from
+the model trained using all samples. In the future, it may be
+beneficial to optimize this updating strategy to involve fewer
+samples in the update training process, greatly improving the
+update speed. This would enable more real-time online anomaly detection when deployed on resource-limited embedded
+devices.
+
+[9]
+
+[10]
+[11]
+
+[12]
+
+[13]
+
+Data availability statement
+All data that support the findings of this study are include
+within the article (and any supplementary files).
+
+[14]
+
+Acknowledgments
+
+[15]
+[16]
+
+This work was supported by Independent Research and
+Development Program of CASC (Grant No.YJ2345CX).
+
+[17]
+
+ORCID iD
+Hongchao Xu  https://orcid.org/0009-0007-9537-7968
+
+[18]
+
+References
+
+[19]
+
+[1] Ahang M, Jalayer M, Shojaeinasab A, Ogunfowora O,
+Charter T and Najjaran H 2022 Synthesizing rolling bearing
+fault samples in new conditions: a framework based on a
+modified CGAN Sensors 22 5413
+[2] Jiang L, Sheng H, Yang T, Tang H, Li X and Gao L 2023 A
+new strategy for bearing health assessment with a dynamic
+interval prediction model Sensors 23 7696
+[3] Wang Q, Liu X, Wei B and Chen W 2021 Online incipient fault
+detection method based on improved ℓ1 trend filtering and
+support vector data description IEEE Access 9 30043–59
+[4] Xu X, Tao Z, Ming W, An Q and Chen M 2020 Intelligent
+monitoring and diagnostics using a novel integrated model
+based on deep learning and multi-sensor feature fusion
+Measurement 165 108086
+[5] Jiang J and Zhang B 2012 Rolling element bearing vibration
+modeling with applications to health monitoring J. Vib.
+Control 18 1768–76
+[6] Wang Y, Xu G, Luo A, Liang L and Jiang K 2016 An online
+tacholess order tracking technique based on generalized
+demodulation for rolling bearing fault detection J. Sound
+Vib. 367 233–49
+[7] Liang Z, Wang A, Yu Y and Yang P 2021 Research on early
+weak structural damage detection of aeroengine intershaft
+bearing based on acoustic emission technology Struct.
+Health Monit. 20 3113–22
+[8] Sharma V, Raghuwanshi K N and Jain K A 2021 Sensitive
+sub-band selection criteria for empirical wavelet transform
+
+[20]
+[21]
+
+[22]
+
+[23]
+[24]
+[25]
+
+[26]
+
+12
+
+to detect bearing fault based on vibration signals J. Vib.
+Eng. Technol. 9 1–15
+Mao W, Shi H, Wang G and Liang X 2022 Unsupervised deep
+multitask anomaly detection with robust alarm strategy for
+online evaluation of bearing early fault occurrence IEEE
+Trans. Instrum. Meas. 71 1–13
+Mao W, Sun B and Wang L 2021 A new deep dual temporal
+domain adaptation method for online detection of bearings
+early fault Entropy 23 162
+Zhou Y, Dong Y and Tang G 2023 Time-varying online
+transfer learning for intelligent bearing fault diagnosis with
+incomplete unlabeled target data IEEE Trans. Ind. Inform.
+19 7733–41
+Liu K, Mao W, Shi H and Liang X 2021 A new unsupervised
+online early fault detection framework of rolling bearings
+based on granular feature forecasting IEEE Access
+9 159684–98
+Li S, Peng Y and Bin G 2023 Prediction of wind turbine
+blades icing based on CJBM with imbalanced data IEEE
+Sens. J. 23 19726–36
+Li S, Peng Y, Shen Y, Zhao S, Shao H, Bin G, Guo Y, Yang X
+and Fan C 2024 Rolling bearing fault diagnosis under data
+imbalance and variable speed based on adaptive clustering
+weighted oversampling Reliab. Eng. Syst. Saf. 244 109938
+Tax D M and Duin R P 2004 Support vector data description
+Mach. Learn. 54 45–66
+Hua X and Ding S 2011 Incremental learning algorithm for
+support vector data description J. Softw. 6 1166–73
+Yin G, Zhang Y-T, Li Z-N, Ren G-Q and Fan H-B 2014
+Online fault diagnosis method based on incremental support
+vector data description and extreme learning machine
+with incremental output structure Neurocomputing
+128 224–31
+Zhang L, Qiao F, Wang J and Zhai X 2021 Equipment health
+assessment based on improved incremental support vector
+data description IEEE Trans. Syst. Man Cybern. 51 3205–16
+Lin Z, Duan D and Yang Q 2020 One-class classifier based
+fault detection in distribution systems with varying
+penetration levels of distributed energy resources IEEE
+Access 8 130023–35
+Gyamfi E and Jurcut A D 2023 Novel online network intrusion
+detection system for industrial IoT based on OI-SVDD and
+AS-ELM IEEE Internet Things J. 10 3827–39
+Fei C, Zhenlin L, Shuowei J, Xin L and Yu Z 2022 A relaxed
+support vector data description algorithm based fault
+detection in distribution systems Front. Energy Res.
+10 973794
+Zhang L, Huang J, Wei Y, Liu J, Dong A and Jianwei W 2023
+Open set maize seed variety classification using
+hyperspectral imaging coupled with a dual deep
+SVDD-based incremental learning framework Expert Syst.
+Appl. 234 121043
+Zhong G, Xiao Y, Liu B, Zhao L and Kong X 2022 Pinball
+loss support vector data description for outlier detection
+Appl. Intell. 52 16940–61
+Mniai A, Tarik M and Jebari K 2023 A novel framework for
+credit card fraud detection IEEE Access 11 112776–86
+Fan C, Peng Y, Shen Y, Guo Y, Zhao S, Zhou J and Li S 2024
+Variable scale multilayer perceptron for helicopter
+transmission system vibration data abnormity beyond
+efficient recovery Eng. Appl. Artif. Intell. 133 108184
+Lei Y, Li N and Guo L, Li N, Yan T and Lin J 2018 Machinery
+health prognostics: a systematic review from data
+acquisition to RUL prediction Mech. Syst. Signal Process.
+104 799–834
+
+
