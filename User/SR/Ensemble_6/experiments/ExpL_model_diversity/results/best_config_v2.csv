@@ -1,2 +1,2 @@
 overall,cf,cap,margin,models,alphas,B1_score,B1_er,B2_score,B2_er,B3_score,B3_er,B4_score,B4_er
-0.6004,0.7650000000000003,2.0,0.9,"['bilstm', 'tcn_res', 'transformer']","{'bilstm': 0.6, 'tcn_res': 0.6, 'transformer': 0.6}",0.6135,-16.6,0.5965,-7.7,0.633,-19.6,0.5586,3.7
+0.5959,0.7852500000000004,2.0,0.9,"['bilstm', 'tcn_res', 'transformer']","{'bilstm': 0.6, 'tcn_res': 0.6, 'transformer': 0.6}",0.6135,-16.6,0.5965,-7.7,0.6172,-20.6,0.5564,3.9

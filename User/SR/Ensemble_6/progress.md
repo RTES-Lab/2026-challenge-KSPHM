@@ -1268,7 +1268,11 @@ margin    ∈ {0.90, 0.93, 0.96}
 | α_transf | 0.6 |
 | cap | 2.0 |
 | margin | 0.90 |
-| cf (test용, margin 포함) | 0.765 |
+| cf (test용, fold CF 평균, margin 포함) | 0.785 |
+
+> **CF 결정 방법**: CF는 예측값 전체에 곱하는 단일 스칼라 (`final = 예측 × CF`). 베어링마다 최적 CF가 달라도 "지정된 베어링들의 평균 score가 최대가 되는 CF 하나"를 0.50~1.80 범위에서 그리드 서치로 선택.  
+> - **LOOCV 내 (leak-free)**: B1 검증 시 → B2, B3, B4 3개로만 CF 탐색 후 B1에 적용 (정답 누출 방지). fold마다 CF 하나씩 생성됨.  
+> - **Test용 CF**: 4개 fold CF의 평균 사용. "3개로 찾아서 1개 unseen에 적용"한 경험의 평균이므로, 4개 전체로 다시 탐색하는 것보다 unseen Test에 더 잘 일반화됨. safety_margin(0.90)은 LOOCV CF 탐색 시 이미 포함.
 
 **LOOCV per-bearing (Leak-free):**
 
@@ -1276,20 +1280,20 @@ margin    ∈ {0.90, 0.93, 0.96}
 | :--- | :--- | :--- | :--- | :--- |
 | B1 | 0.6135 | -16.6% (over) | **+0.131** | +0.033 |
 | B2 | 0.5965 | -7.7% (over) | **+0.067** | +0.062 |
-| B3 | 0.6330 | -19.6% (over) | -0.016 | -0.029 |
-| B4 | 0.5586 | +3.7% (under) | **+0.139** | +0.136 |
-| **Overall** | **0.6004** | | **+0.080** | **+0.051** |
+| B3 | 0.6172 | -20.6% (over) | -0.032 | -0.045 |
+| B4 | 0.5564 | +3.9% (under) | **+0.137** | +0.134 |
+| **Overall** | **0.5959** | | **+0.076** | **+0.046** |
 
 **Test inference** (from `test_rul_results_v2.csv`, 3 seeds):
 
 | Test | RUL (hours) | hi_start | hi_end |
 | :--- | :--- | :--- | :--- |
-| T1 | **4.28hr** | 0.000 | 0.386 |
-| T2 | **13.55hr** | 0.498 | 0.417 |
-| T3 | **9.06hr** | 0.417 | 0.596 |
-| T4 | **3.45hr** | 0.000 | 0.697 |
-| T5 | **4.22hr** | 0.665 | 0.835 |
-| T6 | **3.27hr** | 0.841 | 0.869 |
+| T1 | **4.62hr** | 0.000 | 0.386 |
+| T2 | **13.85hr** | 0.498 | 0.417 |
+| T3 | **9.34hr** | 0.417 | 0.596 |
+| T4 | **3.63hr** | 0.000 | 0.697 |
+| T5 | **4.51hr** | 0.665 | 0.835 |
+| T6 | **3.43hr** | 0.841 | 0.869 |
 
 ##### 결과 해석
 
@@ -1389,7 +1393,7 @@ obs_frac   = HI / 0.75  (beta=0.0, HI 기반)
 
 4. **리얼 기준선 정립**:
    - DTW 단독 leak-free: B1=0.4823, B2=0.5300, B3=0.6493, B4=0.4198, Overall=0.5204
-   - Exp-L_Asym leak-free: B1=0.6135, B2=0.5965, B3=0.6330, B4=0.5586, Overall=0.6004
+   - Exp-L_Asym leak-free: B1=0.6135, B2=0.5965, B3=0.6172, B4=0.5564, Overall=0.5959
    - **Exp-L_Asym이 B3을 제외한 모든 베어링에서 DTW 단독을 이김.**
 
 ---
@@ -1407,15 +1411,15 @@ obs_frac   = HI / 0.75  (beta=0.0, HI 기반)
 | Exp-I | Dynamic obs_frac (beta=0.0, HI 기반) | 0.5826* | 0.6146 (-21%) | 0.6132 (-8%) | 0.6389 (-41%) | 0.4638 (+29%) | *Leaked LOOCV cf |
 | Exp-J | DTW 기저 + LGBM/TCN capped upside | 0.6064* | 0.6213 (-20%) | 0.6203 (-18%) | 0.6513 (-52%) | 0.5328 (+9%) | *Leaked LOOCV cf |
 | Exp-K | LGBM asym sweep (asym=1.0 최적) | 0.6080* | 0.6216 (-20%) | 0.6290 (-18%) | 0.6462 (-52%) | 0.5350 (+10%) | *Leaked LOOCV cf |
-| **Exp-L_Asym** | **Asym NN Loss + Safety Margin=0.90 (Leak-free)** | **0.6004** | **0.6135 (-17%)** | **0.5965 (-8%)** | **0.6330 (-20%)** | **0.5586 (+4%)** | **현재 최고 (권장 제출)** |
+| **Exp-L_Asym** | **Asym NN Loss + Safety Margin=0.90 (Leak-free, fold CF 평균)** | **0.5959** | **0.6135 (-17%)** | **0.5965 (-8%)** | **0.6172 (-21%)** | **0.5564 (+4%)** | **현재 최고 (권장 제출)** |
 | Exp-C (stacking) | Ridge meta-learner | 0.7152* | — | — | — | — | *데이터 누출 무효 |
 
 ### 핵심 발견
 
-1. **Calibration Target Leakage 규명**: LOOCV fold 내에서 전체 데이터셋의 RUL을 참조하여 `cf`를 선정하던 설계 오류를 완전히 해결. 실전 기준선: DTW 단독 LF 0.5204, Exp-L_Asym LF 0.6004.
-2. **앙상블 통제력 확보**: Asym NN Loss + safety_margin=0.90으로 T5(4.22hr), T6(3.27hr) 보수적 유지.
-3. **B3에서 DTW 단독이 최강**: DTW 단독 LF B3=0.6493 > Exp-L_Asym B3=0.6330. 앙상블이 B3를 소폭 악화 (-0.016). B3 개선은 HI 품질 또는 B3 특화 구조 필요.
-4. **B1/B4 대폭 개선이 앙상블의 핵심 가치**: DTW 단독 B1=0.4823 → 0.6135 (+0.131), B4=0.4198 → 0.5586 (+0.139).
+1. **Calibration Target Leakage 규명**: LOOCV fold 내에서 전체 데이터셋의 RUL을 참조하여 `cf`를 선정하던 설계 오류를 완전히 해결. 실전 기준선: DTW 단독 LF 0.5204, Exp-L_Asym LF 0.5959.
+2. **앙상블 통제력 확보**: Asym NN Loss + safety_margin=0.90으로 T5(4.51hr), T6(3.43hr) 보수적 유지.
+3. **B3에서 DTW 단독이 최강**: DTW 단독 LF B3=0.6493 > Exp-L_Asym B3=0.6172. 앙상블이 B3를 악화 (-0.032). B3 개선은 HI 품질 또는 B3 특화 구조 필요.
+4. **B1/B4 대폭 개선이 앙상블의 핵심 가치**: DTW 단독 B1=0.4823 → 0.6135 (+0.131), B4=0.4198 → 0.5564 (+0.137).
 
 ### 현재 Best Configuration (Exp-L_Asym, SP 단독 권장)
 
@@ -1426,10 +1430,10 @@ base       = dtw_raw × cf_dtw_global           (global cf=0.68)
 bilstm_up  = 0.6 × clip(bilstm_cal - base, 0, 1.0×base)
 tcnres_up  = 0.6 × clip(tcnres_cal - base, 0, 1.0×base)
 transf_up  = 0.6 × clip(transf_cal - base, 0, 1.0×base)
-final      = (base + bilstm_up + tcnres_up + transf_up) × 0.765   # margin=0.90 포함
+final      = (base + bilstm_up + tcnres_up + transf_up) × 0.785   # fold CF 평균 (margin=0.90 포함)
 ```
 
-**Test predictions (Exp-L_Asym, 권장)**: T1=4.28hr, T2=13.55hr, T3=9.06hr, T4=3.45hr, T5=4.22hr, T6=3.27hr
+**Test predictions (Exp-L_Asym, 권장)**: T1=4.62hr, T2=13.85hr, T3=9.34hr, T4=3.63hr, T5=4.51hr, T6=3.43hr
 
 ---
 
@@ -1449,5 +1453,16 @@ final      = (base + bilstm_up + tcnres_up + transf_up) × 0.765   # margin=0.90
 
 ---
 
-*최종 갱신: 2026-06-01 (Exp-L_Asym Phase 4 문서화, DTW 단독 Leak-free 베어링별 분석 (Action 1) 완료)*
+---
+
+## Action 2: Test Inference CF 변경 (2026-06-01)
+
+**CF 변경**
+- 기존: 훈련 4개 베어링 전체의 LOOCV score를 최대화하는 CF → 훈련 데이터에 과적합될 위험
+- 변경: LOOCV 4개 fold에서 각각 구한 CF의 평균값 사용 (각 fold CF는 3개로 찾아 1개 unseen에 적용한 값)
+
+**결과**
+- CF 변경 (0.765 → 0.785)으로 LOOCV 0.6004 → 0.5959로 소폭 하락
+
+*최종 갱신: 2026-06-01 (Action 2: Test inference CF 변경)*
 

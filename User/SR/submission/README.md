@@ -8,12 +8,12 @@
 
 | File | RUL_Score (seconds) |
 |:----:|:-------------------:|
-| Validation1 | 15408 |
-| Validation2 | 48780 |
-| Validation3 | 32616 |
-| Validation4 | 12420 |
-| Validation5 | 15192 |
-| Validation6 | 11772 |
+| Validation1 | 16632 |
+| Validation2 | 49860 |
+| Validation3 | 33624 |
+| Validation4 | 13068 |
+| Validation5 | 16236 |
+| Validation6 | 12348 |
 
 **사용 모델**: Exp-L_Asym (`User/SR/Ensemble_6/experiments/ExpL_model_diversity/run_expL_v2.py`)  
 **학습 데이터**: Train1~4 전체 (4개 베어링 모두 사용)  
@@ -123,11 +123,11 @@ EOF
 ```
 obs_frac = HI / 0.75          # HI 기반 수명 위치 추정
 
-base      = DTW 예측 × 0.68   # DTW를 안정 기저로 고정
+base      = DTW 예측 × 0.695  # DTW fold CF 평균
 bilstm_up = 0.6 × clip(BiLSTM 예측 - base, 0, base)
 tcnres_up = 0.6 × clip(TCN-Res 예측 - base, 0, base)
 transf_up = 0.6 × clip(Transformer 예측 - base, 0, base)
-final     = (base + bilstm_up + tcnres_up + transf_up) × 0.765
+final     = (base + bilstm_up + tcnres_up + transf_up) × 0.785  # 앙상블 fold CF 평균 (margin=0.90 포함)
 ```
 
 - BiLSTM / TCN-Res / Transformer는 `AsymmetricHuberLoss(over_penalty=2.8)` 로 훈련 (과대예측 억제)

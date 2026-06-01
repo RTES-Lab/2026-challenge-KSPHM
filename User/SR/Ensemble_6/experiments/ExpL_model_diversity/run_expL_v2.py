@@ -277,27 +277,16 @@ def main():
     for b in BEARINGS:
         print(f"  B{b}: score={per_b[b]:.4f} mean_er={per_b_er[b]:.1f}% cf={cf_tb_ens_all[b]:.2f}")
 
-    # Calculate global calibration factors using all 4 bearings for Test Inference
-    print("\n[Global Calibration Factors for Test Inference]")
+    # Test inference CF: mean of fold CFs (leak-free estimate for unseen bearings)
+    # Each fold CF was found using 3 bearings and applied to 1 unseen bearing,
+    # so the mean is a better estimate for unseen test bearings than re-fitting on all 4.
+    print("\n[Test Inference CF: mean of LOOCV fold CFs]")
     global_cfs = {}
     for m in raw:
-        cf_glob, _ = calibrate(raw[m], meta, BEARINGS)
-        global_cfs[m] = cf_glob
-        print(f"  {m}: global_cf={cf_glob:.2f}")
-
-    # Compute global ensemble blend to find global ensemble cf
-    global_blend = {}
-    for b in BEARINGS:
-        base = raw["dtw"][b] * global_cfs["dtw"]
-        ref = np.maximum(base, MIN_RUL)
-        val = base.copy()
-        for mk in use:
-            pp_cal = raw[mk][b] * global_cfs[mk]
-            val = val + alphas[mk] * np.clip(pp_cal - base, 0, (cap-1)*ref)
-        global_blend[b] = np.maximum(val, MIN_RUL)
-    
-    global_cf_ens, _ = calibrate(global_blend, meta, BEARINGS, safety_margin=margin)
-    print(f"  Ensemble: global_cf={global_cf_ens:.2f}")
+        global_cfs[m] = float(np.mean([local_cfs[m][tb] for tb in BEARINGS]))
+        print(f"  {m}: mean_fold_cf={global_cfs[m]:.3f}")
+    global_cf_ens = float(np.mean([cf_tb_ens_all[tb] for tb in BEARINGS]))
+    print(f"  Ensemble: mean_fold_cf={global_cf_ens:.3f} (margin={margin} already included)")
 
     # ── Test inference with 3 seeds ──
     print(f"\n[Test Inference] 3 seeds...")
