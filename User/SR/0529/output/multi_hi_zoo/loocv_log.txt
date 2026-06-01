@@ -1,0 +1,24 @@
+SR Multi-HI Model Zoo LOOCV
+  model   cf    score
+   lgbm 0.64 0.471685
+zoo_raw 0.62 0.457936
+    gru 1.08 0.451963
+    dtw 0.64 0.436291
+   lstm 0.64 0.434813
+    tcn 0.66 0.414441
+
+Zoo candidate cf=1.50, score=0.4593
+Final selection: lgbm, cf=0.64, score=0.4717
+Weights:
+  lgbm: weight=0.2569, cf=0.64, calibrated_score=0.4717
+  gru: weight=0.2165, cf=1.08, calibrated_score=0.4520
+  dtw: weight=0.1880, cf=0.64, calibrated_score=0.4363
+  lstm: weight=0.1855, cf=0.64, calibrated_score=0.4348
+  tcn: weight=0.1531, cf=0.66, calibrated_score=0.4144
+
+Final errors:
+ bearing model    score    mean_er  mae_cycles  bias_cycles  over_pred_rate  last_true  last_pred
+       1 final 0.493783  35.456385   22.673949   -22.222966        0.069307        1.0   6.865277
+       2 final 0.565408  11.148311   17.358304   -15.615508        0.157303        1.0   9.849593
+       3 final 0.504448 -84.154860    8.325789     5.785738        0.718750        1.0  14.983017
+       4 final 0.323102  42.790563   44.018507   -42.488107        0.098214        1.0  13.939044

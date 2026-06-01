@@ -1,0 +1,13 @@
+variant,bearing,score,mean_er
+dtw_baseline,1,0.5808,-26.5043
+dtw_baseline,2,0.5344,14.4884
+dtw_baseline,3,0.6617,-23.0113
+dtw_baseline,4,0.4226,48.8733
+a1_cal_weighted,1,0.6636,-33.6285
+a1_cal_weighted,2,0.7252,-18.1256
+a1_cal_weighted,3,0.045,-200.6303
+a1_cal_weighted,4,0.673,-0.2173
+a2_dtw_heavy,1,0.533,12.0476
+a2_dtw_heavy,2,0.4987,27.5876
+a2_dtw_heavy,3,0.6068,-64.2454
+a2_dtw_heavy,4,0.448,42.8036

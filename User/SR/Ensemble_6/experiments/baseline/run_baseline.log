@@ -1,0 +1,85 @@
+=== Ensemble_6 / Baseline Reproduction (V1b_dtw) ===
+
+  Train B1: 126 cycles  0.000→0.830  max=0.830
+  Train B2: 114 cycles  0.000→0.725  max=0.725
+  Train B3: 89 cycles  0.000→0.658  max=0.658
+  Train B4: 137 cycles  0.299→0.776  max=0.809
+  Test  T1: 50 cycles  0.000→0.386
+  Test  T2: 50 cycles  0.498→0.417
+  Test  T3: 50 cycles  0.417→0.596
+  Test  T4: 50 cycles  0.000→0.697
+  Test  T5: 50 cycles  0.665→0.835
+  Test  T6: 50 cycles  0.841→0.869
+
+[Saving HI outputs]
+
+[LOOCV]
+Device: cuda
+
+============================================================
+[LOOCV] B1 held out
+  LSTM (1 seeds)...
+  GRU (1 seeds)...
+  TCN (1 seeds)...
+  lgbm=0.5953  lstm=0.3322  gru=0.3248  tcn=0.5150  dtw=0.2582
+============================================================
+[LOOCV] B2 held out
+  LSTM (1 seeds)...
+  GRU (1 seeds)...
+  TCN (1 seeds)...
+  lgbm=0.6245  lstm=0.5130  gru=0.4693  tcn=0.4863  dtw=0.6146
+============================================================
+[LOOCV] B3 held out
+  LSTM (1 seeds)...
+  GRU (1 seeds)...
+  TCN (1 seeds)...
+  lgbm=0.0962  lstm=0.1010  gru=0.1107  tcn=0.1189  dtw=0.3431
+============================================================
+[LOOCV] B4 held out
+  LSTM (1 seeds)...
+  GRU (1 seeds)...
+  TCN (1 seeds)...
+  lgbm=0.6251  lstm=0.5910  gru=0.5543  tcn=0.5980  dtw=0.5290
+
+[Shared weights] {lgbm:0.336, lstm:0.132, gru:0.107, tcn:0.206, dtw:0.219}
+
+[Calibration]
+  model   cf    score
+    dtw 0.68 0.549880
+zoo_avg 1.24 0.530277
+   lgbm 1.16 0.493482
+    tcn 0.68 0.452822
+   lstm 0.64 0.419732
+    gru 0.62 0.411760
+
+zoo_avg: cf=1.24, score=0.5303
+zoo_cal: cf=1.52, score=0.5241
+Final: dtw, cf=0.68, score=0.5499
+
+Overall: 0.5499
+  B1: score=0.5808  mean_er=-26.50%
+  B2: score=0.5344  mean_er=14.49%
+  B3: score=0.6617  mean_er=-23.01%
+  B4: score=0.4226  mean_er=48.87%
+
+[Test inference]
+
+============================================================
+Test inference — dtw  cf=0.68
+  LSTM final training...
+  GRU final training...
+  TCN final training...
+  [T1] start_obs=16  hi=0.000→0.386
+         RUL=2.07hr
+  [T2] start_obs=42  hi=0.498→0.417
+         RUL=11.38hr
+  [T3] start_obs=22  hi=0.417→0.596
+         RUL=7.99hr
+  [T4] start_obs=25  hi=0.000→0.697
+         RUL=4.16hr
+  [T5] start_obs=79  hi=0.665→0.835
+         RUL=2.01hr
+  [T6] start_obs=99  hi=0.841→0.869
+         RUL=1.53hr
+
+Done → results

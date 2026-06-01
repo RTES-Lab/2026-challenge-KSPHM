@@ -1,0 +1,37 @@
+=== Exp-K Phase 2: Fine-Tune Extended Capped ===
+Device: cuda
+
+[LOOCV] B1
+[LOOCV] B2
+[LOOCV] B3
+[LOOCV] B4
+  dtw: cf=0.68 score=0.5499
+  lgbm: cf=0.74 score=0.5039
+  tcn: cf=0.82 score=0.5170
+  tcn_res: cf=0.80 score=0.5366
+  transformer: cf=0.95 score=0.5214
+  bilstm: cf=0.78 score=0.5701
+
+[Fine-Tune Sweep] DTW base + {bilstm, tcn_res, transformer}
+  Total configs: 1500
+
+[BEST] overall=0.6242 cf=0.93 cap=3.0
+  models: ['bilstm', 'tcn_res', 'transformer']
+  alphas: {'bilstm': 0.6, 'tcn_res': 0.4, 'transformer': 0.4}
+  B1: score=0.6206 mean_er=-18.9%
+  B2: score=0.6319 mean_er=-18.5%
+  B3: score=0.6974 mean_er=-30.3%
+  B4: score=0.5468 mean_er=-7.6%
+
+[Test Inference] 3 seeds...
+  Training tcn_res (3 seeds)...
+  Training transformer (3 seeds)...
+  Training bilstm (3 seeds)...
+  T1: start=16 RUL=6.86hr
+  T2: start=42 RUL=15.68hr
+  T3: start=22 RUL=11.60hr
+  T4: start=25 RUL=4.56hr
+  T5: start=79 RUL=6.85hr
+  T6: start=99 RUL=5.39hr
+
+Done in 628s → /data/home/ksphm/2026-challenge-KSPHM/User/SR/Ensemble_6/experiments/ExpK_model_diversity/results

@@ -1,0 +1,56 @@
+=== Ensemble_6 / Exp-D: DTW Weight Sweep ===
+
+Device: cuda
+
+
+[LOOCV] B1 held out:
+  TCN (2 seeds)...
+  lgbm=0.5953  tcn=0.4386  dtw=0.2582
+
+[LOOCV] B2 held out:
+  TCN (2 seeds)...
+  lgbm=0.6245  tcn=0.4662  dtw=0.6146
+
+[LOOCV] B3 held out:
+  TCN (2 seeds)...
+  lgbm=0.0962  tcn=0.1081  dtw=0.3431
+
+[LOOCV] B4 held out:
+  TCN (2 seeds)...
+  lgbm=0.6251  tcn=0.5665  dtw=0.5290
+
+[Global calibration]
+  lgbm: cf=1.17  score=0.4936
+  tcn: cf=0.67  score=0.4331
+  dtw: cf=0.68  score=0.5499
+
+[DTW weight sweep]
+  w_dtw=0.50: cf=0.88  overall=0.5220  B1=0.562 B2=0.509 B3=0.562 B4=0.455
+  w_dtw=0.55: cf=0.90  overall=0.5323  B1=0.580 B2=0.518 B3=0.577 B4=0.454
+  w_dtw=0.60: cf=0.93  overall=0.5431  B1=0.605 B2=0.531 B3=0.581 B4=0.456
+  w_dtw=0.65: cf=0.93  overall=0.5519  B1=0.610 B2=0.531 B3=0.617 B4=0.450
+  w_dtw=0.70: cf=0.95  overall=0.5565  B1=0.617 B2=0.533 B3=0.627 B4=0.449
+  w_dtw=0.75: cf=0.99  overall=0.5606  B1=0.629 B2=0.541 B3=0.620 B4=0.452
+  w_dtw=0.80: cf=1.03  overall=0.5648  B1=0.639 B2=0.552 B3=0.614 B4=0.455
+  w_dtw=0.85: cf=1.04  overall=0.5677  B1=0.639 B2=0.554 B3=0.627 B4=0.451
+  w_dtw=0.90: cf=1.01  overall=0.5672  B1=0.629 B2=0.541 B3=0.662 B4=0.437
+  w_dtw=0.95: cf=1.00  overall=0.5607  B1=0.611 B2=0.535 B3=0.668 B4=0.429
+  w_dtw=1.00: cf=1.00  overall=0.5499  B1=0.581 B2=0.534 B3=0.662 B4=0.423
+
+[Best: w_dtw=0.85  cf=1.04  overall=0.5677]
+  Baseline (dtw=1.0, cf=0.68): 0.5499
+  Exp-A best (a3, dtw=0.70):   0.5555
+  This exp best:               0.5677
+
+Final: B1=0.6395  B2=0.5536  B3=0.6270  B4=0.4507
+
+[Test: w_dtw=0.85  cf=1.04]
+  TCN...
+  T1: start=16  RUL=2.55hr
+  T2: start=42  RUL=11.07hr
+  T3: start=22  RUL=8.72hr
+  T4: start=25  RUL=4.89hr
+  T5: start=79  RUL=2.25hr
+  T6: start=99  RUL=1.79hr
+
+Done → results

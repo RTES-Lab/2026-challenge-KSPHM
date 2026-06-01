@@ -1,0 +1,60 @@
+=== Ensemble_6 / Exp-K: LGBM Asymmetric Loss Sweep ===
+  Exp-J structure fixed: DTW base + LGBM/TCN capped upside (beta=0.0)
+  TCN fixed: alpha=1.0, cap=2.0
+  ASYM_GRID: [1.0, 1.5, 2.0, 2.5, 2.8, 3.5]
+
+Device: cuda
+
+[LOOCV] DTW + TCN (computed once) ...
+  B1: dtw=0.2582  tcn=0.3480
+  B2: dtw=0.6146  tcn=0.6134
+  B3: dtw=0.3431  tcn=0.4543
+  B4: dtw=0.5290  tcn=0.5369
+  dtw_cf=0.68  tcn_cf=0.82
+
+[asym=1.0] LGBM LOOCV ...
+  lgbm_cf=0.72  B1=0.4714  B2=0.5995  B3=0.3179  B4=0.5094
+  -> best: al=0.8 cl=1.3 cf=0.94 overall=0.6080  B4=0.5350(er=10.2%)
+
+[asym=1.5] LGBM LOOCV ...
+  lgbm_cf=0.74  B1=0.4662  B2=0.5986  B3=0.2994  B4=0.5075
+  -> best: al=0.4 cl=1.5 cf=0.95 overall=0.6056  B4=0.5360(er=10.5%)
+
+[asym=2.0] LGBM LOOCV ...
+  lgbm_cf=0.73  B1=0.4440  B2=0.6014  B3=0.3076  B4=0.5157
+  -> best: al=0.4 cl=2.0 cf=0.94 overall=0.6062  B4=0.5323(er=10.9%)
+
+[asym=2.5] LGBM LOOCV ...
+  lgbm_cf=0.74  B1=0.4370  B2=0.6009  B3=0.3049  B4=0.5237
+  -> best: al=0.4 cl=2.0 cf=0.94 overall=0.6054  B4=0.5329(er=9.3%)
+
+[asym=2.8] LGBM LOOCV ...
+  lgbm_cf=0.74  B1=0.4316  B2=0.6068  B3=0.2984  B4=0.5200
+  -> best: al=0.4 cl=2.0 cf=0.94 overall=0.6064  B4=0.5328(er=9.4%)
+
+[asym=3.5] LGBM LOOCV ...
+  lgbm_cf=0.74  B1=0.4076  B2=0.6014  B3=0.3113  B4=0.5237
+  -> best: al=0.4 cl=2.0 cf=0.94 overall=0.6079  B4=0.5318(er=9.2%)
+
+
+[Asym Sweep Summary]
+ asym  lgbm_cf  alpha_lgbm  cap_lgbm   cf  overall     B1     B2     B3     B4  er_B3  er_B4
+  1.0     0.72         0.8       1.3 0.94   0.6080 0.6216 0.6290 0.6462 0.5350  -51.9   10.2
+  1.5     0.74         0.4       1.5 0.95   0.6056 0.6189 0.6166 0.6507 0.5360  -51.3   10.5
+  2.0     0.73         0.4       2.0 0.94   0.6062 0.6212 0.6140 0.6574 0.5323  -50.9   10.9
+  2.5     0.74         0.4       2.0 0.94   0.6054 0.6213 0.6135 0.6539 0.5329  -51.4    9.3
+  2.8     0.74         0.4       2.0 0.94   0.6064 0.6213 0.6203 0.6513 0.5328  -51.6    9.4
+  3.5     0.74         0.4       2.0 0.94   0.6079 0.6215 0.6206 0.6575 0.5318  -51.4    9.2
+
+[Best] asym=1.0  overall=0.6080  B4=0.5350 (er=10.2%)
+
+[Final Test: asym=1.0  3 TCN seeds]
+  T1: start=16  RUL=4.35hr
+  T2: start=42  RUL=21.02hr
+  T3: start=22  RUL=12.68hr
+  T4: start=25  RUL=4.64hr
+  T5: start=79  RUL=4.23hr
+  T6: start=99  RUL=3.21hr
+
+Done → /data/home/ksphm/2026-challenge-KSPHM/User/SR/Ensemble_6/experiments/ExpK_asym_sweep/results
+

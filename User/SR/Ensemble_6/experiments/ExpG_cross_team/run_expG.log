@@ -1,0 +1,54 @@
+=== Ensemble_6 / Exp-G: Cross-Team Capped Ensemble ===
+
+[LOOCV: Generating LGBM predictions per fold]
+
+  B1 (n=116):
+    rul_th  : score=0.5545  mean_er=24.2%
+    rul_sp  : score=0.5808  mean_er=-26.5%
+    rul_lgbm: score=0.5953  mean_er=-23.0%
+  B2 (n=104):
+    rul_th  : score=0.6146  mean_er=7.9%
+    rul_sp  : score=0.5344  mean_er=14.5%
+    rul_lgbm: score=0.6245  mean_er=-16.2%
+  B3 (n=79):
+    rul_th  : score=0.6280  mean_er=-62.5%
+    rul_sp  : score=0.6617  mean_er=-23.0%
+    rul_lgbm: score=0.0962  mean_er=-174.0%
+  B4 (n=127):
+    rul_th  : score=0.3674  mean_er=63.5%
+    rul_sp  : score=0.4226  mean_er=48.9%
+    rul_lgbm: score=0.6251  mean_er=-0.9%
+
+[3D Sweep: w_th × alpha × cap]
+
+Top-10 configurations:
+ w_th  alpha  cap   cf  overall     B1     B2     B3     B4
+ 0.40    0.8  1.1 0.99   0.5737 0.6423 0.5911 0.6555 0.4059
+ 0.40    1.0  1.1 0.99   0.5735 0.6442 0.5971 0.6435 0.4090
+ 0.40    0.6  1.1 1.00   0.5735 0.6400 0.5893 0.6604 0.4043
+ 0.35    0.4  1.2 0.99   0.5732 0.6451 0.5825 0.6559 0.4093
+ 0.10    1.0  1.2 0.94   0.5732 0.6592 0.5659 0.6278 0.4401
+ 0.35    0.8  1.1 0.99   0.5731 0.6434 0.5837 0.6559 0.4093
+ 0.30    0.8  1.1 0.98   0.5731 0.6454 0.5733 0.6629 0.4110
+ 0.30    0.4  1.2 0.98   0.5731 0.6461 0.5726 0.6629 0.4110
+ 0.30    1.0  1.1 0.98   0.5731 0.6483 0.5785 0.6517 0.4141
+ 0.30    0.6  1.2 0.98   0.5731 0.6523 0.5827 0.6400 0.4173
+
+[Best: w_th=0.4  alpha=0.8  cap=1.1  cf=0.99  overall=0.5737]
+  TH ensemble_capped_sc_ridge (leaderboard #1):  0.5747
+  Our Exp-E (V1b, no cross-team):               0.5685
+  This experiment:                               0.5737
+  B1: score=0.6423  mean_er=-10.36%
+  B2: score=0.5911  mean_er=7.70%
+  B3: score=0.6555  mean_er=-46.91%
+  B4: score=0.4059  mean_er=51.60%
+
+[Test: w_th=0.4  alpha=0.8  cap=1.1  cf=0.99]
+  T1: start=10  RUL=4.27hr  (n_obs=40)
+  T2: start=107  RUL=7.12hr  (n_obs=40)
+  T3: start=2  RUL=6.20hr  (n_obs=40)
+  T4: start=25  RUL=5.50hr  (n_obs=40)
+  T5: start=77  RUL=1.55hr  (n_obs=40)
+  T6: start=5  RUL=2.50hr  (n_obs=40)
+
+Done → results

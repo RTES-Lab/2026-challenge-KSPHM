@@ -1,0 +1,49 @@
+=== Ensemble_6 / Exp-J: DTW-Base Capped Upside (SP-only) ===
+  beta=0.0 (HI-based obs_frac, fixed from Exp-I)
+
+Device: cuda
+
+[LOOCV] Running DTW, LGBM, TCN for all bearings ...
+  B1: dtw=0.2582  lgbm=0.4316  tcn=0.3480
+  B2: dtw=0.6146  lgbm=0.6068  tcn=0.6134
+  B3: dtw=0.3431  lgbm=0.2984  tcn=0.4543
+  B4: dtw=0.5290  lgbm=0.5200  tcn=0.5369
+
+  CFs: dtw=0.68  lgbm=0.74  tcn=0.82
+  LGBM>DTW per bearing (after CF):
+    B1: 13/116 = 11%
+    B2: 97/104 = 93%
+    B3: 61/79 = 77%
+    B4: 107/127 = 84%
+
+[Sweep] alpha_lgbm × cap_lgbm × alpha_tcn × cap_tcn ...
+  Total configs: 900
+
+[Top-10]
+ alpha_lgbm  cap_lgbm  alpha_tcn  cap_tcn   cf  overall     B1     B2     B3     B4
+        0.4       2.0        1.0      2.0 0.94   0.6064 0.6213 0.6203 0.6513 0.5328
+        0.4       1.5        1.0      2.0 0.95   0.6057 0.6188 0.6162 0.6529 0.5350
+        0.2       2.0        1.0      2.0 0.96   0.6049 0.6147 0.6079 0.6599 0.5371
+        0.6       1.3        1.0      2.0 0.94   0.6044 0.6213 0.6195 0.6442 0.5325
+        0.6       1.5        1.0      2.0 0.94   0.6043 0.6216 0.6267 0.6350 0.5339
+        0.8       1.3        1.0      2.0 0.94   0.6041 0.6218 0.6309 0.6288 0.5348
+        0.4       1.3        1.0      2.0 0.95   0.6039 0.6186 0.6114 0.6512 0.5342
+        0.2       1.5        1.0      2.0 0.96   0.6033 0.6145 0.6045 0.6579 0.5364
+        0.6       1.2        1.0      2.0 0.94   0.6032 0.6212 0.6131 0.6462 0.5326
+        0.8       1.2        1.0      2.0 0.94   0.6031 0.6216 0.6221 0.6341 0.5346
+
+[Best] alpha_lgbm=0.4  cap_lgbm=2.0  alpha_tcn=1.0  cap_tcn=2.0  cf=0.94  overall=0.6064
+  B1: score=0.6213  mean_er=-20.4%
+  B2: score=0.6203  mean_er=-18.3%
+  B3: score=0.6513  mean_er=-51.6%
+  B4: score=0.5328  mean_er=9.4%
+
+[Test] alpha_lgbm=0.4  cap_lgbm=2.0  alpha_tcn=1.0  cap_tcn=2.0  cf=0.94  TCN 3 seeds
+  T1: start=16  RUL=4.66hr
+  T2: start=42  RUL=19.93hr
+  T3: start=22  RUL=11.84hr
+  T4: start=25  RUL=4.50hr
+  T5: start=79  RUL=4.53hr
+  T6: start=99  RUL=3.44hr
+
+Done → User/SR/Ensemble_6/experiments/ExpJ_capped_upside/results

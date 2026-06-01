@@ -1,0 +1,71 @@
+=== Ensemble_6 / Exp-I: Dynamic obs_frac (Hybrid Time + HI Fraction) ===
+[사용자 제안] obs_frac = beta*(cycle/116.5) + (1-beta)*(HI/0.75)
+
+Device: cuda
+
+[DTW LOOCV] beta-independent, computed once
+  B1: raw=0.2582
+  B2: raw=0.6146
+  B3: raw=0.3431
+  B4: raw=0.5290
+  DTW calibrated: cf=0.68  score=0.5499
+
+[Beta Sweep] BETA_GRID=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  TCN seeds for sweep: [42] (final uses [42, 123, 777])
+
+  [beta=0.0] LOOCV ...
+    w_dtw=0.79  r_lgbm=0.45  lgbm_cf=0.74  tcn_cf=0.82  cf=1.11  overall=0.5826  B3=0.6389
+  [beta=0.1] LOOCV ...
+    w_dtw=0.81  r_lgbm=0.55  lgbm_cf=0.75  tcn_cf=0.75  cf=1.09  overall=0.5745  B3=0.6491
+  [beta=0.2] LOOCV ...
+    w_dtw=0.79  r_lgbm=0.7  lgbm_cf=0.71  tcn_cf=0.60  cf=1.11  overall=0.5700  B3=0.6372
+  [beta=0.3] LOOCV ...
+    w_dtw=0.78  r_lgbm=0.7  lgbm_cf=0.74  tcn_cf=0.59  cf=1.12  overall=0.5645  B3=0.6116
+  [beta=0.4] LOOCV ...
+    w_dtw=0.83  r_lgbm=0.7  lgbm_cf=0.72  tcn_cf=0.59  cf=1.07  overall=0.5632  B3=0.6440
+  [beta=0.5] LOOCV ...
+    w_dtw=0.83  r_lgbm=0.7  lgbm_cf=0.65  tcn_cf=0.60  cf=1.08  overall=0.5629  B3=0.6543
+  [beta=0.6] LOOCV ...
+    w_dtw=0.83  r_lgbm=0.7  lgbm_cf=0.55  tcn_cf=0.59  cf=1.09  overall=0.5610  B3=0.6551
+  [beta=0.7] LOOCV ...
+    w_dtw=0.81  r_lgbm=0.7  lgbm_cf=0.60  tcn_cf=0.63  cf=1.10  overall=0.5633  B3=0.6477
+  [beta=0.8] LOOCV ...
+    w_dtw=0.90  r_lgbm=0.7  lgbm_cf=1.12  tcn_cf=0.66  cf=1.01  overall=0.5643  B3=0.6529
+  [beta=0.9] LOOCV ...
+    w_dtw=0.88  r_lgbm=0.7  lgbm_cf=1.15  tcn_cf=0.67  cf=1.01  overall=0.5664  B3=0.6446
+  [beta=1.0] LOOCV ...
+    w_dtw=0.86  r_lgbm=0.7  lgbm_cf=1.17  tcn_cf=0.69  cf=1.02  overall=0.5692  B3=0.6319
+
+[Beta Sweep Summary]
+ beta  overall  w_dtw  r_lgbm   cf     B1     B2     B3     B4
+  0.0 0.582645   0.79    0.45 1.11 0.6146 0.6132 0.6389 0.4638
+  0.1 0.574547   0.81    0.55 1.09 0.6131 0.6024 0.6491 0.4336
+  0.2 0.569958   0.79    0.70 1.11 0.6122 0.5961 0.6372 0.4342
+  0.3 0.564486   0.78    0.70 1.12 0.6108 0.5947 0.6116 0.4409
+  0.4 0.563201   0.83    0.70 1.07 0.6096 0.5656 0.6440 0.4335
+  0.5 0.562865   0.83    0.70 1.08 0.6102 0.5546 0.6543 0.4325
+  0.6 0.561032   0.83    0.70 1.09 0.6104 0.5475 0.6551 0.4311
+  0.7 0.563258   0.81    0.70 1.10 0.6125 0.5559 0.6477 0.4369
+  0.8 0.564339   0.90    0.70 1.01 0.6197 0.5489 0.6529 0.4358
+  0.9 0.566413   0.88    0.70 1.01 0.6295 0.5496 0.6446 0.4420
+  1.0 0.569184   0.86    0.70 1.02 0.6404 0.5536 0.6319 0.4508
+
+  Exp-E reference (beta=1.0, 3 TCN seeds):   0.5685
+  beta=1.0 this sweep  (1 TCN seed):          0.5692  B3=0.6319
+
+[Best: beta=0.0  w_dtw=0.79  r_lgbm=0.45  cf=1.11  overall=0.5826]
+  B1: score=0.6146  mean_er=-21.5%
+  B2: score=0.6132  mean_er=-7.9%
+  B3: score=0.6389  mean_er=-41.2%
+  B4: score=0.4638  mean_er=29.0%
+
+[Final Test: beta=0.0  3 TCN seeds]
+  TCN (3 seeds)...
+  T1: start=16  RUL=4.00hr
+  T2: start=42  RUL=14.10hr
+  T3: start=22  RUL=9.60hr
+  T4: start=25  RUL=4.71hr
+  T5: start=79  RUL=3.57hr
+  T6: start=99  RUL=3.68hr
+
+Done → User/SR/Ensemble_6/experiments/ExpI_dynamic_obs_frac/results

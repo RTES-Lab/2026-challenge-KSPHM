@@ -268,7 +268,7 @@ $$
 
 [결과 제출 링크](https://docs.google.com/forms/d/e/1FAIpQLSeMfclPPkkqDw4R8ECcmvyv1U2Gy6Vh9f4ANdgpIWrG3YMfPQ/viewform)
 
-- 예비 제출일(6월 1일~5일)에는 **Validation 데이터에 대한 RUL Score 파일([팀이름_validation.xlsx](https://www.notion.so/KSPHM-KIMM-2026-a6a39f853cf782e0a0ee014d68590cb6?pvs=21))**을 결과 제출 링크를 통해 업로드해주시기 바랍니다.
+- 예비 제출일(6월 1일~5일)에는 **Validation 데이터에 대한 RUL Score 파일([팀이름_validation.xlsx])을 결과 제출 링크를 통해 업로드해주시기 바랍니다.
 - 최종 제출일(6월 8일)에는 아래의 **3가지 파일**을 모두 준비해 결과 제출 링크를 통해 각 항목에 맞게 업로드해주시기 바랍니다.
 
 ### 📁 항목별 제출 양식
@@ -276,9 +276,7 @@ $$
 1. Validation 데이터에 대한 RUL Score 파일
     1. 파일명: [](https://www.notion.so/KSPHM-KIMM-2026-a6a39f853cf782e0a0ee014d68590cb6?pvs=21)**팀이름_validation.xlsx**
         
-        ![그림 7. 팀이름_validation.xlsx 예시](image%204.png)
-        
-        그림 7. 팀이름_validation.xlsx 예시
+        ![그림 7. 팀이름_validation.xlsx 예시](./image.png)
         
     
 2. 예측 성능 복원 가능한 코드

@@ -1,0 +1,66 @@
+=== Ensemble_6 / Exp-C: Stacking Meta-Learner ===
+
+Device: cuda
+
+[Step 1: Collect OOF predictions]
+
+  B1 held out:
+    LSTM...
+    GRU...
+    TCN...
+    lgbm=0.5953  lstm=0.3322  gru=0.3248  tcn=0.5150  dtw=0.2582
+
+  B2 held out:
+    LSTM...
+    GRU...
+    TCN...
+    lgbm=0.6245  lstm=0.5130  gru=0.4693  tcn=0.4863  dtw=0.6146
+
+  B3 held out:
+    LSTM...
+    GRU...
+    TCN...
+    lgbm=0.0962  lstm=0.1010  gru=0.1107  tcn=0.1189  dtw=0.3431
+
+  B4 held out:
+    LSTM...
+    GRU...
+    TCN...
+    lgbm=0.6251  lstm=0.5910  gru=0.5543  tcn=0.5980  dtw=0.5290
+
+[Step 2: Train meta-learner]
+  Meta train size: (426, 9)
+  Ridge coef (base models): lgbm=-2.820 lstm=-5.950 gru=-4.927 tcn=3.842 dtw=0.795
+  Ridge coef (context): hi=23.310 obs_frac=-41.651 slope=-0.979 gain=-14.657
+
+[Step 3: Stacking LOOCV evaluation]
+  B1 stacking score: 0.8191
+  B2 stacking score: 0.8771
+  B3 stacking score: 0.3127
+  B4 stacking score: 0.8182
+
+[Calibration]
+  dtw (baseline): cf=0.68  score=0.5499
+  stacking:       cf=0.94  score=0.7152
+
+  Selected: stacking (improvement: +0.1653)
+
+[Final per-bearing]
+  B1: score=0.8014  mean_er=18.57%
+  B2: score=0.8196  mean_er=10.78%
+  B3: score=0.4040  mean_er=-100.80%
+  B4: score=0.8359  mean_er=8.14%
+  Overall: 0.7152  (baseline: 0.5499)
+
+[Test: stacking  cf=0.94]
+  LSTM...
+  GRU...
+  TCN...
+  T1: start=16  RUL=7.63hr
+  T2: start=42  RUL=8.15hr
+  T3: start=22  RUL=10.37hr
+  T4: start=25  RUL=6.31hr
+  T5: start=79  RUL=5.85hr
+  T6: start=99  RUL=4.13hr
+
+Done → results

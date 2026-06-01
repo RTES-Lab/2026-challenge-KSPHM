@@ -1,0 +1,5 @@
+dataset,test_bearing,score,mean_er
+Train,1,0.4938,35.4564
+Train,2,0.5654,11.1483
+Train,3,0.5044,-84.1549
+Train,4,0.3231,42.7906

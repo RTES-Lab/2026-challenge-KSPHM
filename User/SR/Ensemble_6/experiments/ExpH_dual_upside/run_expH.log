@@ -1,0 +1,60 @@
+=== Ensemble_6 / Exp-H: Dual Upside (SP base + TH upside + LGBM upside) ===
+
+[LOOCV: Generating LGBM predictions per fold]
+
+  B1 (n=116):
+    rul_sp  : score=0.5808  mean_er=-26.5%
+    rul_th  : score=0.5545  mean_er=24.2%
+    rul_lgbm: score=0.5953  mean_er=-23.0%
+    TH>SP: 19% of cycles | LGBM>SP: 50% of cycles
+  B2 (n=104):
+    rul_sp  : score=0.5344  mean_er=14.5%
+    rul_th  : score=0.6146  mean_er=7.9%
+    rul_lgbm: score=0.6245  mean_er=-16.2%
+    TH>SP: 67% of cycles | LGBM>SP: 68% of cycles
+  B3 (n=79):
+    rul_sp  : score=0.6617  mean_er=-23.0%
+    rul_th  : score=0.6280  mean_er=-62.5%
+    rul_lgbm: score=0.0962  mean_er=-174.0%
+    TH>SP: 85% of cycles | LGBM>SP: 94% of cycles
+  B4 (n=127):
+    rul_sp  : score=0.4226  mean_er=48.9%
+    rul_th  : score=0.3674  mean_er=63.5%
+    rul_lgbm: score=0.6251  mean_er=-0.9%
+    TH>SP: 22% of cycles | LGBM>SP: 100% of cycles
+
+[4D Sweep: alpha_th × cap_th × alpha_lgbm × cap_lgbm]
+  Total configs: 600 × 90 CF values
+
+Top-10 configurations:
+ alpha_th  cap_th  alpha_lgbm  cap_lgbm   cf  overall     B1     B2     B3     B4
+      0.8     2.0         1.0       1.1 0.94   0.5881 0.6400 0.6214 0.6551 0.4359
+      0.8     2.0         0.8       1.2 0.91   0.5881 0.6479 0.6198 0.6447 0.4402
+      0.8     2.0         0.4       1.3 0.93   0.5879 0.6424 0.6199 0.6518 0.4374
+      0.8     2.0         0.8       1.1 0.94   0.5871 0.6358 0.6164 0.6642 0.4320
+      0.8     2.0         0.4       1.2 0.94   0.5870 0.6353 0.6162 0.6643 0.4320
+      0.8     2.0         1.0       1.2 0.88   0.5869 0.6470 0.6134 0.6472 0.4400
+      1.0     2.0         1.0       1.1 0.92   0.5858 0.6406 0.6378 0.6319 0.4329
+      1.0     2.0         0.8       1.2 0.88   0.5857 0.6414 0.6296 0.6373 0.4343
+      0.6     2.0         0.8       1.2 0.93   0.5854 0.6495 0.6051 0.6434 0.4437
+      1.0     2.0         1.0       1.2 0.85   0.5854 0.6388 0.6225 0.6463 0.4339
+
+[Best: alpha_th=0.8  cap_th=2.0  alpha_lgbm=0.8  cap_lgbm=1.2  cf=0.91  overall=0.5881]
+  TH ensemble_capped_sc_ridge (leaderboard #1):  0.5747
+  Our Exp-G (cross-team capped):                 0.5737
+  Our Exp-E (V1b, no cross-team):               0.5685
+  This experiment:                               0.5881
+  B1: score=0.6479  mean_er=-21.63%
+  B2: score=0.6198  mean_er=2.55%
+  B3: score=0.6447  mean_er=-53.16%
+  B4: score=0.4402  mean_er=44.57%
+
+[Test: alpha_th=0.8  cap_th=2.0  alpha_lgbm=0.8  cap_lgbm=1.2  cf=0.91]
+  T1: start=10  RUL=3.69hr  (n_obs=40)
+  T2: start=107  RUL=10.35hr  (n_obs=40)
+  T3: start=2  RUL=8.44hr  (n_obs=40)
+  T4: start=25  RUL=6.19hr  (n_obs=40)
+  T5: start=77  RUL=1.90hr  (n_obs=40)
+  T6: start=5  RUL=2.72hr  (n_obs=40)
+
+Done → results

@@ -1,0 +1,91 @@
+=== Ensemble_6 / Exp-A: DTW-Centric Ensemble ===
+
+[HI summary]
+  B1: len=126  0.000→0.830  gain=0.830
+  B2: len=114  0.000→0.725  gain=0.725
+  B3: len=89  0.000→0.658  gain=0.658
+  B4: len=137  0.299→0.776  gain=0.477
+
+[Saving HI outputs]
+
+[LOOCV]
+Device: cuda
+
+
+============================================================
+[LOOCV] B1 held out
+  LSTM (3 seeds)...
+  GRU (3 seeds)...
+  TCN (3 seeds)...
+  raw: lgbm=0.5953  lstm=0.3697  gru=0.3248  tcn=0.4148  dtw=0.2582
+
+============================================================
+[LOOCV] B2 held out
+  LSTM (3 seeds)...
+  GRU (3 seeds)...
+  TCN (3 seeds)...
+  raw: lgbm=0.6245  lstm=0.5482  gru=0.4637  tcn=0.4813  dtw=0.6146
+
+============================================================
+[LOOCV] B3 held out
+  LSTM (3 seeds)...
+  GRU (3 seeds)...
+  TCN (3 seeds)...
+  raw: lgbm=0.0962  lstm=0.1081  gru=0.1007  tcn=0.1109  dtw=0.3431
+
+============================================================
+[LOOCV] B4 held out
+  LSTM (3 seeds)...
+  GRU (3 seeds)...
+  TCN (3 seeds)...
+  raw: lgbm=0.6251  lstm=0.6315  gru=0.5886  tcn=0.5435  dtw=0.5290
+
+[Calibration per model]
+  lgbm: cf=1.17  cal_score=0.4936
+  lstm: cf=0.68  cal_score=0.4377
+  gru: cf=0.60  cal_score=0.4141
+  tcn: cf=0.62  cal_score=0.4318
+  dtw: cf=0.68  cal_score=0.5499
+
+[A1 weights (cal_score^4)] {lgbm:0.236, lstm:0.146, gru:0.117, tcn:0.138, dtw:0.363}
+  A1: cf=1.55  score=0.5267
+
+[A2 weights (DTW=0.5 fixed)] {lgbm:0.200, lstm:0.100, gru:0.100, tcn:0.100, dtw:0.500}
+  A2: cf=0.91  score=0.5217
+
+[A3: pattern-based (fast_thresh=0.4)]
+  B1: gain=0.830 → fast
+  B2: gain=0.725 → fast
+  B3: gain=0.658 → fast
+  B4: gain=0.477 → fast
+  A3: cf=1.03  score=0.5555
+
+[Summary]
+  a3_pattern: cf=1.03  score=0.5555
+  dtw_baseline: cf=0.68  score=0.5499
+  a1_cal_weighted: cf=1.55  score=0.5267
+  a2_dtw_heavy: cf=0.91  score=0.5217
+
+  Best: a3_pattern  cf=1.03  score=0.5555
+
+Final per-bearing (LOOCV):
+  B1: score=0.6149  mean_er=-9.43%
+  B2: score=0.5383  mean_er=17.62%
+  B3: score=0.6165  mean_er=-59.07%
+  B4: score=0.4522  mean_er=41.82%
+  Overall: 0.5555
+
+[Test]
+
+[Test] a3_pattern  final_key=a3  cf=1.03
+  LSTM...
+  GRU...
+  TCN...
+  T1: start=16  gain=0.386  RUL=3.69hr
+  T2: start=42  gain=-0.081  RUL=8.13hr
+  T3: start=22  gain=0.178  RUL=9.81hr
+  T4: start=25  gain=0.697  RUL=5.13hr
+  T5: start=79  gain=0.170  RUL=2.01hr
+  T6: start=99  gain=0.027  RUL=1.71hr
+
+Done → results

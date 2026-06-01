@@ -1,0 +1,7 @@
+strategy,params,cf,overall
+ext_capped,"n=3,a=0.4,c=2.0,models=['bilstm', 'tcn_res', 'transformer']",0.0,0.6182
+ExpJ_repro,"al=0.4,cl=2.0,at=1.0,ct=2.0",0.9400000000000004,0.6064
+bidir_capped,"au=0.6,cu=2.0,ad=0.1,cd=1.2",0.0,0.5942
+phase_based,"dw_e=0.4,dw_l=0.8",0.0,0.5586
+trimmed_mean_t1,"trim=1,n_models=11",1.0500000000000005,0.5385
+trimmed_mean_t2,"trim=2,n_models=11",1.0400000000000005,0.5315

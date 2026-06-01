@@ -1,0 +1,58 @@
+=== Ensemble_6 / Exp-F: SC HI Exchange (c035_cubic) ===
+
+Device: cuda
+
+
+[LOOCV] B1 held out:
+  TCN (3 seeds)...
+  lgbm=0.4851  tcn=0.4676  dtw=0.2647
+
+[LOOCV] B2 held out:
+  TCN (3 seeds)...
+  lgbm=0.6818  tcn=0.4506  dtw=0.5554
+
+[LOOCV] B3 held out:
+  TCN (3 seeds)...
+  lgbm=0.1123  tcn=0.1155  dtw=0.4173
+
+[LOOCV] B4 held out:
+  TCN (3 seeds)...
+  lgbm=0.5644  tcn=0.6409  dtw=0.3250
+  lgbm: cf=1.22  score=0.4797
+  tcn: cf=0.64  score=0.4592
+  dtw: cf=0.74  score=0.4454
+
+[2D Sweep: DTW weight × LGBM/TCN ratio]
+
+Top-10 configurations:
+ w_dtw  r_lgbm   cf  overall     B1     B2     B3     B4
+  0.78    0.70 0.97   0.4683 0.2559 0.6501 0.5948 0.3727
+  0.79    0.70 0.98   0.4679 0.2557 0.6560 0.5896 0.3706
+  0.78    0.65 0.98   0.4677 0.2558 0.6514 0.5921 0.3717
+  0.80    0.70 0.98   0.4675 0.2547 0.6561 0.5915 0.3674
+  0.79    0.65 0.99   0.4673 0.2556 0.6574 0.5865 0.3698
+  0.81    0.70 0.98   0.4670 0.2538 0.6561 0.5935 0.3646
+  0.80    0.65 0.99   0.4669 0.2547 0.6576 0.5883 0.3669
+  0.78    0.55 1.00   0.4665 0.2555 0.6537 0.5867 0.3700
+  0.81    0.65 0.98   0.4665 0.2530 0.6527 0.5969 0.3633
+  0.82    0.70 0.98   0.4664 0.2529 0.6558 0.5950 0.3621
+
+[Best: w_dtw=0.78  r_lgbm=0.7  cf=0.97  overall=0.4683]
+  Exp-E best (V1b HI, w_dtw=0.88, lgbm=0.70):  0.5685
+  This experiment best (SC HI):                 0.4683
+  B1: score=0.2559  mean_er=-67.07%
+  B2: score=0.6501  mean_er=23.53%
+  B3: score=0.5948  mean_er=-44.72%
+  B4: score=0.3727  mean_er=55.20%
+  Overall: 0.4684
+
+[Test: w_dtw=0.78  r_lgbm=0.7  cf=0.97]
+  TCN (3 seeds)...
+  T1: start=19  RUL=4.65hr
+  T2: start=45  RUL=3.93hr
+  T3: start=5  RUL=9.00hr
+  T4: start=17  RUL=5.85hr
+  T5: start=3  RUL=12.57hr
+  T6: start=34  RUL=8.56hr
+
+Done → results
