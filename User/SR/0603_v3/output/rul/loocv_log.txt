@@ -1,0 +1,10 @@
+RUL Regime v3 — LGBM(+elapsed_frac) + LSTM(global norm)
+LGBM  mean: 0.4487
+LSTM  mean: 0.3783
+Ens (raw):  0.4652
+Ens + CF :  0.3716
+
+  B1: LGBM=0.4880  LSTM=0.3836  Ens=0.4310  CF=0.97  w=[LGBM=0.536,LSTM=0.464]  final=0.4251
+  B2: LGBM=0.5564  LSTM=0.3800  Ens=0.4482  CF=0.97  w=[LGBM=0.522,LSTM=0.478]  final=0.4429
+  B3: LGBM=0.1322  LSTM=0.4031  Ens=0.5262  CF=1.40  w=[LGBM=0.600,LSTM=0.400]  final=0.1730
+  B4: LGBM=0.6180  LSTM=0.3465  Ens=0.4553  CF=0.96  w=[LGBM=0.502,LSTM=0.498]  final=0.4454
