@@ -28,7 +28,6 @@ BASE          = "/data/home/ksphm/2026-challenge-KSPHM"
 SR_BASE       = f"{BASE}/User/SR/0603_v3"
 DATASET_DIR   = os.path.join(BASE, "dataset")
 TEST_DIR      = os.path.join(DATASET_DIR, "Test")
-TEST_FEAT_DIR = os.path.join(BASE, "User/SC/HI/05072245_signal_transform_v5_test/output")
 
 OUT_TRAIN = os.path.join(SR_BASE, "output/train")
 OUT_TEST  = os.path.join(SR_BASE, "output/test")
@@ -134,10 +133,27 @@ def load_bearing(bid: int) -> pd.DataFrame:
     return df
 
 
+def extract_test_features(tid: int) -> pd.DataFrame:
+    cache = os.path.join(OUT_TEST, f"Test{tid}_features_raw.csv")
+    if os.path.exists(cache):
+        return pd.read_csv(cache)
+    tdms_dir = os.path.join(TEST_DIR, f"Test{tid}")
+    files    = sorted(glob.glob(os.path.join(tdms_dir, "*.tdms")))
+    print(f"    TDMS 추출 중 ({len(files)}개 파일)...")
+    rows = []
+    for i, fp in enumerate(files):
+        row = _extract_one(fp)
+        row["file_idx"] = i + 1
+        rows.append(row)
+        if (i + 1) % 10 == 0:
+            print(f"      [{i+1}/{len(files)}]")
+    df = pd.DataFrame(rows)[["file_idx"] + ALL_FEATS]
+    df.to_csv(cache, index=False)
+    return df
+
+
 def load_test(tid: int) -> pd.DataFrame:
-    return pd.read_csv(
-        os.path.join(TEST_FEAT_DIR, f"Test{tid}_features.csv")
-    )[ALL_FEATS].copy().reset_index(drop=True)
+    return extract_test_features(tid)[ALL_FEATS].copy().reset_index(drop=True)
 
 
 def classify_regime_fft(test_id: int) -> np.ndarray:

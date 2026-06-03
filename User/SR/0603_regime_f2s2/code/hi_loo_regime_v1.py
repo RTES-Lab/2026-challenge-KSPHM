@@ -53,6 +53,7 @@ FEATURE_GROUPS = {
     "highfreq":  ["ch3_high_band", "ch4_high_band"],
     "energy":    ["ch3_total_power", "ch3_energy", "ch3_rms"],
     "variation": ["ch3_std", "ch3_p2p"],
+    "ch1":       ["ch1_rms", "ch1_energy", "ch1_p2p"],
 }
 ALL_FEATS = [f for feats in FEATURE_GROUPS.values() for f in feats]
 
@@ -296,6 +297,7 @@ def compute_regime_stats(dfs: dict, exclude_bid=None) -> dict:
             direction = +1 if sum(dir_votes[gname]) >= 0 else -1
             arr = (np.array(group_scores_all[gname]) * direction
                    if group_scores_all[gname] else np.array([0.0]))
+            arr = np.sign(arr) * np.log1p(np.abs(arr))
             group_stats[gname] = {
                 "direction": direction,
                 "p5":  float(np.percentile(arr, 5)),
@@ -336,6 +338,7 @@ def apply_regime_hi(feat_mat: np.ndarray, cond: np.ndarray,
             weights /= weights.sum() + 1e-12
             score   = (ratios[:, fidx] * weights).sum(axis=1)
             score   = score * gs[gname]["direction"]
+            score   = np.sign(score) * np.log1p(np.abs(score))
             score   = train_anchored_scale(score, gs[gname]["p5"],
                                            gs[gname]["p95"])
             score   = ema_smooth(score)

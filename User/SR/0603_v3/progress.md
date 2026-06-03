@@ -1,6 +1,6 @@
 # KSPHM 2026 Challenge — 작업 진행 기록
 
-> 마지막 업데이트: 2026-06-03
+> 마지막 업데이트: 2026-06-03 (섹션 9 추가, Test 피처 TDMS 직접 추출로 전환)
 
 ---
 
@@ -101,14 +101,15 @@
 | 항목 | v1 (0603_v2) | v2 (0603_v3) |
 |------|-------------|-------------|
 | Train 피처 | F2S2 변환 CSV | **TDMS 직접 추출 (raw)** |
-| Test 피처 | raw (기존과 동일) | raw (동일) |
+| Test 피처 | 외부 CSV (raw) | **TDMS 직접 추출 (raw)** |
 | Baseline | LOO train 3개 pooled 평균 | 동일 유지 |
 | 개별 PNG | 없음 (통합만) | **Bearing{b}_HI.png, Test{tid}_HI.png 추가** |
 
-#### Train raw 피처 (첫 실행 시 TDMS에서 추출, 이후 캐시)
+#### raw 피처 추출 (첫 실행 시 TDMS에서 추출, 이후 캐시)
 
 - 추출 피처: `ch3_high_band, ch4_high_band, ch3_total_power, ch3_energy, ch3_rms, ch3_std, ch3_p2p`
 - 레짐 분류: Train → Operation CSV (RPM ≥ 850 = 고속), Test → FFT peak
+- Train/Test 모두 TDMS 직접 추출 → `output/train/Bearing{b}_features_raw.csv`, `output/test/Test{tid}_features_raw.csv` 캐시
 
 #### Train LOO HI Q-score 비교
 
@@ -122,6 +123,8 @@
 
 B3 대폭 향상 — F2S2 변환이 B3 피처를 왜곡하고 있었음.
 
+![Train LOO Regime HI](output/train/Bearing_LOO_Regime_HI.png)
+
 #### Test HI 결과
 
 | Test | HI start | HI end | Q-score | 비고 |
@@ -132,6 +135,8 @@ B3 대폭 향상 — F2S2 변환이 B3 피처를 왜곡하고 있었음.
 | T4   | 0.006    | 0.161  | 0.700   | 정상 초기, 증가 |
 | T5   | 0.326    | 0.346  | 0.131   | **이미 열화 상태에서 시작** |
 | T6   | 0.513    | 0.518  | 0.057   | **심각 열화 상태에서 시작**, 평탄 |
+
+![Test Regime HI](output/test/Test_Regime_HI.png)
 
 ### 4-2. RUL 파이프라인 (`rul_regime_v3.py`)
 
@@ -174,6 +179,8 @@ Test 베어링의 HI 초기값이 Train 베어링의 HI에서 처음 도달하�
 > **v2 대비: Ens+CF 0.330 → Ens_raw 0.465 (+41%)**
 > CF가 B3를 망가뜨리므로 Ens_raw가 실질적 최고 성능
 
+![LOOCV Predictions](output/rul/loocv_predictions.png)
+
 ### Test RUL 예측 (v3)
 
 | Test | start 위치 | RUL (cycles) | RUL (hr) |
@@ -185,9 +192,21 @@ Test 베어링의 HI 초기값이 Train 베어링의 HI에서 처음 도달하�
 | T5   | 86.4%     | 11.3        | 1.89     |
 | T6   | 94.1%     | 10.9        | 1.82     |
 
+![Test Predictions](output/rul/test_predictions.png)
+
 ---
 
 ## 6. 현재 남은 문제
+
+### 6-0. 개별 Bearing LOOCV 예측
+
+| Bearing1 | Bearing2 |
+|----------|----------|
+| ![B1](output/rul/Bearing1_RUL.png) | ![B2](output/rul/Bearing2_RUL.png) |
+
+| Bearing3 (LGBM 문제) | Bearing4 |
+|----------------------|----------|
+| ![B3](output/rul/Bearing3_RUL.png) | ![B4](output/rul/Bearing4_RUL.png) |
 
 ### 6-1. LSTM 여전히 flat (~15~20 사이클 상수 예측)
 
@@ -226,6 +245,7 @@ User/SR/0603_v3/
 │   │   ├── Bearing_LOO_Regime_HI.png
 │   │   └── summary.csv
 │   ├── test/
+│   │   ├── Test{1-6}_features_raw.csv   # TDMS 추출 캐시 (신규)
 │   │   ├── Test{1-6}_HI.csv / .png
 │   │   ├── Test_Regime_HI.png
 │   │   └── summary.csv
@@ -247,3 +267,82 @@ User/SR/0603_v3/
 - [ ] LGBM B3 개선: HI 누적 변화량, 변화 속도 피처 추가
 - [ ] CF 전략 수정: Ens_raw 사용 또는 per-confidence CF
 - [ ] HI 품질 재검토 (B3 max HI=0.14, B4 시작 HI=0.55 이상치)
+
+---
+
+## 9. 실험 기록 — `0603_v4` (레짐별 피처 Q-score 필터링, 폐기)
+
+### 9-1. 아이디어 및 동기
+
+- **가설**: 고속/저속 레짐에서 열화를 잘 나타내는 피처가 다를 것
+- **분석**: 레짐별 피처 Q-score를 사전 계산 (LOO, 4개 베어링 평균)
+
+| Feature | LOW Q | HIGH Q | 차이 |
+|---------|-------|--------|------|
+| ch4_high_band | 0.799 | 0.903 | +0.104 |
+| ch3_total_power | 0.790 | 0.899 | +0.108 |
+| ch3_std | 0.790 | 0.899 | +0.109 |
+| ch3_energy | 0.788 | 0.898 | +0.111 |
+| ch3_rms | 0.788 | 0.898 | +0.111 |
+| ch3_high_band | 0.694 | 0.865 | +0.171 |
+| **ch3_p2p** | **0.544** | 0.789 | +0.245 |
+
+- 피처 순위 순서는 레짐에 무관하게 동일 → "완전히 다른 피처셋" 근거 약함
+- ch3_p2p만 LOW에서 평균 0.544 (B4에서 0.077)로 두드러지게 낮음
+
+### 9-2. 구현 (`User/SR/0603_v4/code/hi_loo_regime_v3.py`)
+
+`compute_regime_stats` 내 `feat_q` 계산 직후, `Q_THRESHOLD` 이하 피처 가중치를 0으로 설정:
+
+```python
+Q_THRESHOLD = 0.35
+feat_q = {f: (q if q >= Q_THRESHOLD else 0.0) for f, q in feat_q.items()}
+```
+
+### 9-3. 실제로 필터링된 피처
+
+- B1/B3 LOO — LOW 레짐: `ch3_total_power`, `ch3_energy`, `ch3_rms`, `ch3_std` 제거 (4개!)
+- B2 LOO — LOW 레짐: `ch3_total_power`, `ch3_energy` 제거
+- B4 LOO — 필터링 없음
+
+### 9-4. 문제 원인
+
+**B4가 LOW 레짐에서 이미 열화 상태로 시작** (hi_start ≈ 0.55).  
+B1/B2/B3 fold에 B4가 훈련 베어링으로 포함되면, B4의 첫 10% LOW 레짐 사이클이 이미 열화됨
+→ pooled baseline이 높게 왜곡 → 에너지 피처의 LOO Q-score가 비정상적으로 낮게 계산
+→ ch3_p2p가 아닌 멀쩡한 피처까지 필터링됨
+
+### 9-5. HI Q-score 결과 비교
+
+| Bearing | v3 (raw) | v4 (Q-filter) | 변화 |
+|---------|----------|---------------|------|
+| B1 | 0.573 | 0.782 | +0.209 |
+| B2 | 0.639 | 0.633 | -0.006 |
+| B3 | **0.804** | 0.698 | **-0.106** |
+| B4 | 0.501 | 0.501 | ±0 |
+| **평균** | **0.629** | 0.654 | +0.025 |
+
+### 9-6. LOOCV RUL 결과 비교
+
+| | B1 | B2 | B3 | B4 | 평균 |
+|--|-----|-----|-----|-----|------|
+| v3 Ens_raw | 0.431 | 0.448 | **0.526** | 0.455 | **0.465** |
+| v4 Ens_raw | 0.390 | 0.428 | 0.525 | 0.443 | **0.447** |
+
+**모든 베어링에서 소폭 악화 → v4 폐기.**
+
+### 9-7. 결론
+
+- 레짐별 피처 순위가 사실상 동일하므로 "레짐별 다른 피처셋" 아이디어의 근거가 약함
+- Q-threshold 필터는 B4 baseline 오염 문제로 인해 의도치 않은 피처까지 제거
+- 근본 문제는 B4의 비정상적 초기 상태이며, 피처 선택으로는 해결 불가
+- `User/SR/0603_v4/` 디렉토리는 삭제, v3 유지
+
+---
+
+## 8. 다음 작업 후보 (업데이트)
+
+- [ ] LGBM B3 개선: HI 누적 변화량, 변화 속도 피처 추가 ← **우선순위 높음**
+- [ ] LSTM → Ridge Regression 또는 2nd LGBM으로 교체
+- [ ] CF 전략 수정: Ens_raw 사용 또는 per-confidence CF
+- [x] 레짐별 피처 Q-score 필터링 → 효과 없음 (섹션 9 참조)

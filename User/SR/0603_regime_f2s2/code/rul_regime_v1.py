@@ -36,7 +36,6 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 BEARINGS        = [1, 2, 3, 4]
 TEST_IDS        = [1, 2, 3, 4, 5, 6]
 SEQ_LENGTH      = 10
-MEAN_TRAIN_LIFE = 116.5      # (126+114+89+137)/4, 고정값
 INTERVAL_SEC    = 600
 SEEDS           = [42, 7, 123, 0, 99]
 
@@ -44,7 +43,7 @@ SEEDS           = [42, 7, 123, 0, 99]
 NORMAL_UNTIL = {1: 89, 2: 92, 3: 62, 4: 78}
 EOL          = {1: 126, 2: 114, 3: 89, 4: 137}
 
-N_FEAT = 3   # [HI_norm, obs_frac, regime]
+N_FEAT = 3   # [HI_norm, hi_slope_norm, regime]
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -103,20 +102,29 @@ def avg_score(N: int, obs_pts, preds) -> float:
 def make_lgbm_features(hi_arr: np.ndarray, regime_arr: np.ndarray,
                         seq_len: int = SEQ_LENGTH):
     """
-    피처: HI window (seq_len개) + slope, mean, std, max, last, delta,
-          regime_current (현재 레짐), regime_frac (window 내 고속 비율)
+    피처: HI window (seq_len개) + slope×3(10/20/30-window), mean, std, max, last, delta,
+          regime_current, regime_frac
     레이블: 잔여 window 수
     """
     feats, targets = [], []
     N = len(hi_arr)
     t = np.arange(seq_len, dtype=float)
     for i in range(seq_len, N):
-        win    = hi_arr[i - seq_len: i]
-        reg_w  = regime_arr[i - seq_len: i]
-        slope  = float(np.polyfit(t, win, 1)[0])
+        win   = hi_arr[i - seq_len: i]
+        reg_w = regime_arr[i - seq_len: i]
+        slope = float(np.polyfit(t, win, 1)[0])
+
+        w20 = hi_arr[max(0, i - 20): i]
+        t20 = np.arange(len(w20), dtype=float)
+        slope20 = float(np.polyfit(t20, w20, 1)[0]) if len(w20) >= 5 else slope
+
+        w30 = hi_arr[max(0, i - 30): i]
+        t30 = np.arange(len(w30), dtype=float)
+        slope30 = float(np.polyfit(t30, w30, 1)[0]) if len(w30) >= 5 else slope
+
         feats.append([
             *win,                       # HI 이력 10개
-            slope,                      # HI 기울기
+            slope,                      # 10-window slope
             float(win.mean()),
             float(win.std()),
             float(win.max()),
@@ -124,6 +132,8 @@ def make_lgbm_features(hi_arr: np.ndarray, regime_arr: np.ndarray,
             float(win[-1] - win[0]),    # window 내 변화량
             float(regime_arr[i]),       # 현재 레짐 (0/1)
             float(reg_w.mean()),        # window 내 고속 비율
+            slope20,                    # 20-window slope
+            slope30,                    # 30-window slope
         ])
         targets.append(float(N - i))
     return np.array(feats), np.array(targets)
@@ -161,24 +171,43 @@ def predict_lgbm(model: lgb.Booster, hi_arr: np.ndarray,
 # LSTM (N_FEAT=3: HI_norm, obs_frac, regime)
 # ══════════════════════════════════════════════════════════════════
 def make_seqs(hi_arr: np.ndarray, regime_arr: np.ndarray,
-              rul_arr: np.ndarray, seq_len: int, start_obs: int = 0):
+              rul_arr: np.ndarray, seq_len: int, slope_scale: float):
     """
-    window-minmax 정규화된 HI + obs_frac + regime → 3-채널 시퀀스.
-    정규화에 사용되는 min/max는 해당 window 내부 값만 사용 (leakage 없음).
-    obs_frac은 MEAN_TRAIN_LIFE(고정 상수)로만 나눔 (leakage 없음).
+    window-minmax 정규화된 HI + hi_slope_norm + regime → 3-채널 시퀀스.
+    - HI: window 내 min-max 정규화 (leakage 없음)
+    - hi_slope_norm: window 기울기 / slope_scale (train_bids 기반 고정 스케일)
+    - regime: 0/1
+    obs_frac 제거 이유: own baseline HI로 인해 Train/Test 모두 관측 시작 시점이
+    HI=0이므로, obs_frac=0에서 시작하는 Test 베어링이 "새 베어링"으로 오인됨.
+    slope은 절대 HI 스케일에 무관하여 Train/Test 간 일관성 유지.
     """
     n = len(hi_arr)
     X, y = [], []
+    t = np.arange(seq_len, dtype=float)
     for i in range(n - seq_len):
         win      = hi_arr[i: i + seq_len].copy()
         w_min, w_max = win.min(), win.max()
-        win_norm = (win - w_min) / (w_max - w_min + 1e-8)
-        obs_frac = np.clip(
-            (start_obs + i + np.arange(seq_len)) / MEAN_TRAIN_LIFE, 0.0, 2.0)
-        reg_seq  = regime_arr[i: i + seq_len].astype(float)
-        X.append(np.stack([win_norm, obs_frac, reg_seq], axis=1))
+        win_norm   = (win - w_min) / (w_max - w_min + 1e-8)
+        slope      = float(np.polyfit(t, win, 1)[0])
+        slope_norm = np.full(seq_len, np.clip(slope / slope_scale, -2.0, 2.0))
+        reg_seq    = regime_arr[i: i + seq_len].astype(float)
+        X.append(np.stack([win_norm, slope_norm, reg_seq], axis=1))
         y.append(float(rul_arr[i + seq_len]))
     return np.array(X), np.array(y)
+
+
+def compute_slope_scale(train_data: dict, train_bids: list,
+                        seq_len: int = SEQ_LENGTH) -> float:
+    """train_bids 내 모든 window의 최대 |slope| — leakage-free 스케일 기준."""
+    t = np.arange(seq_len, dtype=float)
+    max_s = 1e-8
+    for b in train_bids:
+        hi = train_data[b]["hi"]
+        for i in range(seq_len, len(hi)):
+            s = abs(float(np.polyfit(t, hi[i - seq_len: i], 1)[0]))
+            if s > max_s:
+                max_s = s
+    return max_s
 
 
 class LSTMRegressor(nn.Module):
@@ -235,13 +264,16 @@ def build_lstm_preds(train_data: dict, train_bids: list, test_bid: int,
                      device) -> tuple:
     """
     train_bids로만 LSTM 학습, test_bid의 예측 반환.
-    rul_scale: train_bids 레이블 max (test_bid 데이터 미사용).
+    slope_scale: train_bids 기반 → leakage 없음.
+    rul_scale:   train_bids 레이블 max → leakage 없음.
     """
+    slope_scale = compute_slope_scale(train_data, train_bids)
+
     X_list, y_list = [], []
     for b in train_bids:
         hi_b, reg_b = train_data[b]["hi"], train_data[b]["regime"]
         rul_b = rul_labels(len(hi_b), b)
-        X, y  = make_seqs(hi_b, reg_b, rul_b, SEQ_LENGTH)
+        X, y  = make_seqs(hi_b, reg_b, rul_b, SEQ_LENGTH, slope_scale)
         X_list.append(X); y_list.append(y)
     X_train = np.concatenate(X_list)
     y_train = np.concatenate(y_list)
@@ -250,7 +282,7 @@ def build_lstm_preds(train_data: dict, train_bids: list, test_bid: int,
     hi_t  = train_data[test_bid]["hi"]
     reg_t = train_data[test_bid]["regime"]
     rul_t = rul_labels(len(hi_t), test_bid)
-    X_test, _ = make_seqs(hi_t, reg_t, rul_t, SEQ_LENGTH)
+    X_test, _ = make_seqs(hi_t, reg_t, rul_t, SEQ_LENGTH, slope_scale)
     Xt = torch.tensor(X_test, dtype=torch.float32).to(device)
 
     all_preds = []
@@ -463,12 +495,14 @@ def run_test_inference(loocv_results: dict):
 
     # Train 전체로 LSTM 학습
     print("  LSTM 학습 (전체 Train, 5 seeds)...")
+    slope_scale_all = compute_slope_scale(train_data, BEARINGS)
+    print(f"  slope_scale (all train): {slope_scale_all:.6f}")
     X_all, y_all = [], []
     for b in BEARINGS:
         hi_b  = train_data[b]["hi"]
         reg_b = train_data[b]["regime"]
         rul_b = rul_labels(len(hi_b), b)
-        X, y  = make_seqs(hi_b, reg_b, rul_b, SEQ_LENGTH)
+        X, y  = make_seqs(hi_b, reg_b, rul_b, SEQ_LENGTH, slope_scale_all)
         X_all.append(X); y_all.append(y)
     X_train  = np.concatenate(X_all)
     y_train  = np.concatenate(y_all)
@@ -496,14 +530,16 @@ def run_test_inference(loocv_results: dict):
         preds_lgbm = predict_lgbm(lgbm_model, hi_t, reg_t)
 
         # LSTM
+        t_seq  = np.arange(SEQ_LENGTH, dtype=float)
         X_test = []
         for j in range(N - SEQ_LENGTH):
             win  = hi_t[j: j + SEQ_LENGTH].copy()
             wmin, wmax = win.min(), win.max()
-            wn   = (win - wmin) / (wmax - wmin + 1e-8)
-            of   = np.clip((j + np.arange(SEQ_LENGTH)) / MEAN_TRAIN_LIFE, 0.0, 2.0)
-            rg   = reg_t[j: j + SEQ_LENGTH].astype(float)
-            X_test.append(np.stack([wn, of, rg], axis=1))
+            wn    = (win - wmin) / (wmax - wmin + 1e-8)
+            slope = float(np.polyfit(t_seq, win, 1)[0])
+            sn    = np.full(SEQ_LENGTH, np.clip(slope / slope_scale_all, -2.0, 2.0))
+            rg    = reg_t[j: j + SEQ_LENGTH].astype(float)
+            X_test.append(np.stack([wn, sn, rg], axis=1))
         Xt = torch.tensor(np.array(X_test), dtype=torch.float32).to(device)
         all_lstm_preds = []
         for m in lstm_models:
