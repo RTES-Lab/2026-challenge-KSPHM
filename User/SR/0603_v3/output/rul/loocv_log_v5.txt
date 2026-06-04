@@ -1,0 +1,10 @@
+RUL Regime v5 — LGBM + Ridge (LSTM 교체)
+LGBM  mean: 0.4493
+Ridge mean: 0.4756
+Ens (raw):  0.4621
+Ens + CF :  0.3307
+
+  B1: LGBM=0.4899  Ridge=0.6416  Ens=0.5596  CF=0.63  w=[LGBM=0.509,Ridge=0.491]  final=0.4136
+  B2: LGBM=0.5495  Ridge=0.5345  Ens=0.5448  CF=0.64  w=[LGBM=0.477,Ridge=0.523]  final=0.4261
+  B3: LGBM=0.1359  Ridge=0.1093  Ens=0.1213  CF=1.21  w=[LGBM=0.481,Ridge=0.519]  final=0.0415
+  B4: LGBM=0.6220  Ridge=0.6168  Ens=0.6227  CF=0.63  w=[LGBM=0.478,Ridge=0.522]  final=0.4417

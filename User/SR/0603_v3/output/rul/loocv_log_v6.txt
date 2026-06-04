@@ -1,0 +1,11 @@
+RUL Regime v6 — 3-way ensemble: LGBM + Ridge + LSTM
+LGBM  mean: 0.4493
+Ridge mean: 0.4756
+LSTM  mean: 0.3783
+Ens (raw):  0.4533
+Ens + CF :  0.3418
+
+  B1: LGBM=0.4899  Ridge=0.6416  LSTM=0.3836  Ens=0.4993  CF=0.80  w=(0.354,0.341,0.305)  final=0.4381
+  B2: LGBM=0.5495  Ridge=0.5345  LSTM=0.3800  Ens=0.4748  CF=0.80  w=(0.333,0.365,0.302)  final=0.4249
+  B3: LGBM=0.1359  Ridge=0.1093  LSTM=0.4031  Ens=0.3334  CF=1.40  w=(0.364,0.393,0.243)  final=0.0647
+  B4: LGBM=0.6220  Ridge=0.6168  LSTM=0.3465  Ens=0.5058  CF=0.80  w=(0.324,0.354,0.322)  final=0.4395

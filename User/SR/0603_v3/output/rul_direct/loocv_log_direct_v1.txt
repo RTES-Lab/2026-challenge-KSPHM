@@ -1,0 +1,10 @@
+RUL Direct v1 — raw z-score features + LGBM + LSTM
+LGBM  mean: 0.3889
+LSTM  mean: 0.3200
+Ens (raw):  0.4675
+Ens + CF :  0.3946
+
+  B1: LGBM=0.5579  LSTM=0.3238  Ens=0.4198  CF=1.05  w=[LGBM=0.511,LSTM=0.489]  final=0.4297
+  B2: LGBM=0.3568  LSTM=0.2915  Ens=0.4648  CF=1.06  w=[LGBM=0.548,LSTM=0.452]  final=0.4718
+  B3: LGBM=0.1230  LSTM=0.3064  Ens=0.5697  CF=1.40  w=[LGBM=0.595,LSTM=0.405]  final=0.2506
+  B4: LGBM=0.5178  LSTM=0.3584  Ens=0.4158  CF=1.05  w=[LGBM=0.530,LSTM=0.470]  final=0.4262

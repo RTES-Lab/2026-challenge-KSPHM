@@ -1,0 +1,10 @@
+RUL Regime v4 — LGBM(+slope5/10/delta) + LSTM(global norm)
+LGBM  mean: 0.4493
+LSTM  mean: 0.3783
+Ens (raw):  0.4664
+Ens + CF :  0.3712
+
+  B1: LGBM=0.4899  LSTM=0.3836  Ens=0.4333  CF=0.96  w=[LGBM=0.536,LSTM=0.464]  final=0.4256
+  B2: LGBM=0.5495  LSTM=0.3800  Ens=0.4464  CF=0.96  w=[LGBM=0.524,LSTM=0.476]  final=0.4395
+  B3: LGBM=0.1359  LSTM=0.4031  Ens=0.5284  CF=1.40  w=[LGBM=0.599,LSTM=0.401]  final=0.1772
+  B4: LGBM=0.6220  LSTM=0.3465  Ens=0.4576  CF=0.94  w=[LGBM=0.502,LSTM=0.498]  final=0.4426
