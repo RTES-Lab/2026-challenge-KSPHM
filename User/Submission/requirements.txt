@@ -1,0 +1,18 @@
+# KSPHM-KIMM 2026 Challenge - RUL reproduction environment
+# OS: Ubuntu 20.04.6 LTS
+# Python: 3.8.20  (conda env: ksphm_env)
+#
+# Install:
+#   conda create -n ksphm_env python=3.8.20
+#   conda activate ksphm_env
+#   pip install -r requirements.txt
+#   conda install -c conda-forge nptdms=1.10.0   # (or: pip install npTDMS==1.10.0)
+
+torch==2.4.1
+numpy==1.24.3
+scipy==1.10.1
+scikit-learn==1.3.2
+pandas==2.0.3
+nptdms==1.10.0
+matplotlib==3.7.2
+openpyxl==3.1.5
